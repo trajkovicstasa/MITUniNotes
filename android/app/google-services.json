@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "188477950137",
+    "project_id": "uni-notes-6f027",
+    "storage_bucket": "uni-notes-6f027.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:188477950137:android:b02f8d2ce205328eeab368",
+        "android_client_info": {
+          "package_name": "com.example.mit_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCldnXoXqYz7IhzP-GjjKLLjtQ_73ZaZqI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

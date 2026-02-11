@@ -1,33 +1,16 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:notes_hub/providers/theme_provider.dart';
-import 'package:notes_hub/screens/root_screen.dart';
-import 'package:notes_hub/consts/theme_data.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:notes_hub/app.dart';
+import 'package:notes_hub/simple_bloc_observer.dart';
+import 'package:user_repository/user_repository.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  Bloc.observer = SimpleBlocObserver();
+  runApp( MyApp(FirebaseUserRepo()));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
 
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) {
-          return ThemeProvider();
-        }),
-      ],
-      child: Consumer<ThemeProvider>(builder: (context, themeProvider, child) {
-        return MaterialApp(
-          title: 'NotesHub',
-          theme: Styles.themeData(
-              isDarkTheme: themeProvider.getIsDarkTheme, context: context),
-          home: const RootScreen(),
-        );
-      }),
-    );
-  }
-}
