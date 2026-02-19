@@ -25,7 +25,8 @@ class ProfileScreen extends StatelessWidget {
             "Profile Screen"
           ),
         ),
-        body: Column(
+        body: SingleChildScrollView(
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Visibility(
@@ -36,6 +37,7 @@ class ProfileScreen extends StatelessWidget {
                   label: "Please login to have unlimited access"),
                 ),
               ),
+          
               Visibility(
                 visible: true,
                 child: Padding(
@@ -169,6 +171,7 @@ class ProfileScreen extends StatelessWidget {
               )
           ],
         ),
+      )
       );
   }
 }

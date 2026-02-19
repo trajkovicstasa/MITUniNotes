@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:NotesHub/providers/theme_provider.dart';
-import 'package:NotesHub/screens/home_screen.dart';
-import 'package:NotesHub/consts/theme_data.dart';
+import 'package:notes_hub/providers/theme_provider.dart';
+import 'package:notes_hub/screens/home_screen.dart';
+import 'package:notes_hub/consts/theme_data.dart';
 
 void main() {
   runApp(const MyApp());
