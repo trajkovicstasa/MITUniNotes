@@ -1,9 +1,12 @@
 import 'package:dynamic_height_grid_view/dynamic_height_grid_view.dart';
 import 'package:flutter/material.dart';
+import 'package:notes_hub/providers/wishlist_provider.dart';
 import 'package:notes_hub/services/assets_manager.dart';
+import 'package:notes_hub/services/my_app_functions.dart';
 import 'package:notes_hub/widgets/empty_bag.dart';
 import 'package:notes_hub/widgets/products/product_widget.dart';
 import 'package:notes_hub/widgets/title_text.dart';
+import 'package:provider/provider.dart';
 
 class WishlistScreen extends StatelessWidget {
   static const routName = "/WishlistScreen";
@@ -11,7 +14,8 @@ class WishlistScreen extends StatelessWidget {
   final bool isEmpty = true;
   @override
   Widget build(BuildContext context) {
-    return isEmpty
+    final wishlistProvider = Provider.of<WishlistProvider>(context);
+    return wishlistProvider.getWishlists.isEmpty
         ? Scaffold(
             body: EmptyBagWidget(
               imagePath: "${AssetsManager.imagePath}/bag/wishlist.png",
@@ -28,10 +32,20 @@ class WishlistScreen extends StatelessWidget {
                   "${AssetsManager.imagePath}/bag/wishlist.png",
                 ),
               ),
-              title: const TitelesTextWidget(label: "Wishlist (6)"),
+              title: TitelesTextWidget(
+              label: "Wishlist (${wishlistProvider.getWishlists.length})"),
               actions: [
                 IconButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    MyAppFunctions.showErrorOrWarningDialog(
+                      isError: false,
+                      context: context,
+                      subtitle: "Clear wishlist?",
+                      fct: () {
+                        wishlistProvider.clearLocalWishlist();
+                      },
+                    );
+                  },
                   icon: const Icon(
                     Icons.delete_forever_rounded,
                   ),
@@ -42,9 +56,16 @@ class WishlistScreen extends StatelessWidget {
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
               builder: (context, index) {
-                return const ProductWidget();
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ProductWidget(
+                    productId: wishlistProvider.getWishlists.values
+                        .toList()[index]
+                        .productId,
+                  ),
+                );
               },
-              itemCount: 200,
+              itemCount: wishlistProvider.getWishlists.length,
               crossAxisCount: 2,
             ),
           );

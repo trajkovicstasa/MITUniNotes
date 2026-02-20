@@ -1,4 +1,4 @@
-import 'package:notes_hub/modals/categories_model.dart';
+import 'package:notes_hub/models/categories_model.dart';
 import 'package:notes_hub/services/assets_manager.dart';
 
 class AppConstants {
