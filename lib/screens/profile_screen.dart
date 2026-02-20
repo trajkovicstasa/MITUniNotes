@@ -1,5 +1,9 @@
 
 import 'package:flutter/material.dart';
+import 'package:notes_hub/screens/inner_screen/orders/orders_screen.dart';
+import 'package:notes_hub/screens/inner_screen/viewed_recently.dart';
+import 'package:notes_hub/screens/inner_screen/wishlist.dart';
+import 'package:notes_hub/services/my_app_functions.dart';
 import 'package:notes_hub/widgets/title_text.dart';
 import 'package:flutter_iconly/flutter_iconly.dart';
 import 'package:provider/provider.dart';
@@ -94,19 +98,26 @@ class ProfileScreen extends StatelessWidget {
                     CustomListTile(
                       imagePath: "${AssetsManager.imagePath}/bag/wishlist.png",
                       text: "All orders",
-                      function: () {},
+                      function: () {
+                        Navigator.pushNamed(context, OrdersScreen.routeName);
+                      },
                     ),
 
                     CustomListTile(
                       imagePath: "${AssetsManager.imagePath}/bag/wishlist.png",
                       text: "Wishlist",
-                      function: () {},
+                      function: () {
+                         Navigator.pushNamed(context, WishlistScreen.routName);
+                      },
                     ),
 
                     CustomListTile(
                       imagePath: "${AssetsManager.imagePath}/profile/repeat.png",
                       text: "Viewed Recently",
-                      function: () {},
+                      function: () {
+                        Navigator.pushNamed(
+                          context, ViewedRecentlyScreen.routName);
+                      },
 
                     ),
 
@@ -161,7 +172,14 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
 
-                  onPressed: () {},
+                  onPressed: () async {
+                    await MyAppFunctions.showErrorOrWarningDialog(
+                    context: context,
+                    subtitle: "Are you sure you want to signout?",
+                    isError: false,
+                    fct: () {},
+                  );
+                  },
                   icon: const Icon(Icons.login, color: Colors.white),
                   label: const Text(
                     "Login",
