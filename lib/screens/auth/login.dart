@@ -1,10 +1,13 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_iconly/flutter_iconly.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:notes_hub/consts/validator.dart';
 import 'package:notes_hub/screens/auth/forgot_password.dart';
 import 'package:notes_hub/screens/auth/register.dart';
 import 'package:notes_hub/screens/root_screen.dart';
 import 'package:notes_hub/services/assets_manager.dart';
+import 'package:notes_hub/services/my_app_functions.dart';
 import 'package:notes_hub/widgets/auth/google_btn.dart';
 import 'package:notes_hub/widgets/subtitle_text.dart';
 import 'package:notes_hub/widgets/title_text.dart';
@@ -23,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   late final FocusNode _emailFocusNode;
   late final FocusNode _passwordFocusNode;
   final _formkey = GlobalKey<FormState>();
+  final auth = FirebaseAuth.instance;
   @override
   void initState() {
     _emailController = TextEditingController();
@@ -48,6 +52,36 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _loginFct() async {
     final isValid = _formkey.currentState!.validate();
     FocusScope.of(context).unfocus();
+     if (isValid) {
+      try {
+        setState(() {});
+
+        await auth.signInWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+        Fluttertoast.showToast(
+          msg: "Login Successful",
+          textColor: Colors.white,
+        );
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, RootScreen.routeName);
+      } on FirebaseException catch (error) {
+        await MyAppFunctions.showErrorOrWarningDialog(
+          context: context,
+          subtitle: error.message.toString(),
+          fct: () {},
+        );
+      } catch (error) {
+        await MyAppFunctions.showErrorOrWarningDialog(
+          context: context,
+          subtitle: error.toString(),
+          fct: () {},
+        );
+      } finally {
+        setState(() {});
+      }
+    }
   }
 
   @override

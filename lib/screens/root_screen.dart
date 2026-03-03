@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_iconly/flutter_iconly.dart';
 import 'package:notes_hub/consts/app_colors.dart';
 import 'package:notes_hub/providers/cart_provider.dart';
+import 'package:notes_hub/providers/products_provider.dart';
+import 'package:notes_hub/providers/user_provider.dart';
+import 'package:notes_hub/providers/wishlist_provider.dart';
 import 'package:notes_hub/screens/cart/cart_screen.dart';
 import 'package:notes_hub/screens/home_screen.dart';
 import 'package:notes_hub/screens/profile_screen.dart';
 import 'package:notes_hub/screens/search_screen.dart';
 import 'package:provider/provider.dart';
-
+import 'dart:developer';
 class RootScreen extends StatefulWidget {
   static const String routeName = "/RootScreen";
   const RootScreen({super.key});
@@ -21,6 +24,8 @@ class _RootScreenState extends State<RootScreen> {
   int currentScreen = 0;
   late PageController controller;
 
+  bool isLoadingProd = true;
+
   @override
   void initState() {
     super.initState();
@@ -32,6 +37,35 @@ class _RootScreenState extends State<RootScreen> {
       ProfileScreen(),
     ];
     controller = PageController(initialPage: currentScreen);
+  }
+  Future<void> fetchFCT() async {
+    final productsProvider =
+        Provider.of<ProductsProvider>(context, listen: false);
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+    final wishlistsProvider =
+        Provider.of<WishlistProvider>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    try {
+      Future.wait({
+        productsProvider.fetchProducts(),
+        userProvider.fetchUserInfo(),
+      });
+      Future.wait({
+        cartProvider.fetchCart(),
+        wishlistsProvider.fetchWishlist(),
+      });
+    } catch (error) {
+      log(error.toString());
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    if (isLoadingProd) {
+      fetchFCT();
+    }
+    super.didChangeDependencies();
   }
 
   @override

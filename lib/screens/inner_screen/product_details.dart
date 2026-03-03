@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:notes_hub/consts/app_colors.dart';
 import 'package:notes_hub/providers/cart_provider.dart';
 import 'package:notes_hub/providers/products_provider.dart';
+import 'package:notes_hub/services/my_app_functions.dart';
 import 'package:notes_hub/widgets/products/heart_btn.dart';
 import 'package:notes_hub/widgets/subtitle_text.dart';
 import 'package:notes_hub/widgets/title_text.dart';
@@ -106,15 +107,26 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                         ),
                                       ),
                                     ),
-                                    onPressed: () {
+                                   onPressed: () async {
                                       if (cartProvider.isProdinCart(
                                           productId:
                                               getCurrProduct.productId)) {
                                         return;
                                       }
-                                      cartProvider.addProductToCart(
-                                        productId: getCurrProduct.productId,
-                                      );
+                                       try {
+                                        await cartProvider.addToCartFirebase(
+                                            productId: getCurrProduct.productId,
+                                            qty: 1,
+                                            context: context);
+                                      } catch (e) {
+                                        await MyAppFunctions
+                                            .showErrorOrWarningDialog(
+                                          // ignore: use_build_context_synchronously
+                                          context: context,
+                                          subtitle: e.toString(),
+                                          fct: () {},
+                                        );
+                                      }
                                     },
                                     icon: Icon(
                                       cartProvider.isProdinCart(
