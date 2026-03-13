@@ -19,7 +19,9 @@ import 'package:provider/provider.dart';
 import 'package:notes_hub/providers/theme_provider.dart';
 import 'package:notes_hub/consts/theme_data.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -29,76 +31,58 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-   return FutureBuilder(
-        future: Firebase.initializeApp(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const MaterialApp(
-              debugShowCheckedModeBanner: false,
-              home: Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              ),
-            );
-          } else if (snapshot.hasError) {
-            return MaterialApp(
-              debugShowCheckedModeBanner: false,
-              home: Scaffold(
-                  body:
-                      Center(child: SelectableText(snapshot.error.toString()))),
-            );
-          }
-          return MultiProvider(
-            providers: [
-              ChangeNotifierProvider(create: (_) {
-                return ThemeProvider();
-              }),
-              ChangeNotifierProvider(create: (_) {
-                return ProductsProvider();
-              }),
-              ChangeNotifierProvider(create: (_) {
-                return CartProvider();
-              }),
-              ChangeNotifierProvider(create: (_) {
-                return WishlistProvider();
-              }),
-              ChangeNotifierProvider(create: (_) {
-                return ViewedProdProvider();
-              }),
-              ChangeNotifierProvider(create: (_) {
-                return UserProvider();
-              }),
-              ChangeNotifierProvider(create: (_) {
-                return OrderProvider();
-              }),
-            ],
-            child: Consumer<ThemeProvider>(
-                builder: (context, themeProvider, child) {
-              return MaterialApp(
-                  debugShowCheckedModeBanner: false,
-                  title: 'FTN Skriptarnica',
-                  theme: Styles.themeData(
-                      isDarkTheme: themeProvider.getIsDarkTheme,
-                      context: context),
-                  //home: const RootScreen(),
-                  home: const LoginScreen(),
-                  routes: {
-                    RootScreen.routeName: (context) => const RootScreen(),
-                    ProductDetailsScreen.routName: (context) =>
-                        const ProductDetailsScreen(),
-                    WishlistScreen.routName: (context) =>
-                        const WishlistScreen(),
-                    ViewedRecentlyScreen.routName: (context) =>
-                        const ViewedRecentlyScreen(),
-                    RegisterScreen.routName: (context) =>
-                        const RegisterScreen(),
-                    LoginScreen.routeName: (context) => const LoginScreen(),
-                    OrdersScreen.routeName: (context) => const OrdersScreen(),
-                    ForgotPasswordScreen.routeName: (context) =>
-                        const ForgotPasswordScreen(),
-                    SearchScreen.routName: (context) => const SearchScreen(),
-                  });
-            }),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) {
+          return ThemeProvider();
+        }),
+        ChangeNotifierProvider(create: (_) {
+          return ProductsProvider();
+        }),
+        ChangeNotifierProvider(create: (_) {
+          return CartProvider();
+        }),
+        ChangeNotifierProvider(create: (_) {
+          return WishlistProvider();
+        }),
+        ChangeNotifierProvider(create: (_) {
+          return ViewedProdProvider();
+        }),
+        ChangeNotifierProvider(create: (_) {
+          return UserProvider();
+        }),
+        ChangeNotifierProvider(create: (_) {
+          return OrderProvider();
+        }),
+      ],
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'FTN Skriptarnica',
+            theme: Styles.themeData(
+              isDarkTheme: themeProvider.getIsDarkTheme,
+              context: context,
+            ),
+            //home: const RootScreen(),
+            home: const LoginScreen(),
+            routes: {
+              RootScreen.routeName: (context) => const RootScreen(),
+              ProductDetailsScreen.routName: (context) =>
+                  const ProductDetailsScreen(),
+              WishlistScreen.routName: (context) => const WishlistScreen(),
+              ViewedRecentlyScreen.routName: (context) =>
+                  const ViewedRecentlyScreen(),
+              RegisterScreen.routName: (context) => const RegisterScreen(),
+              LoginScreen.routeName: (context) => const LoginScreen(),
+              OrdersScreen.routeName: (context) => const OrdersScreen(),
+              ForgotPasswordScreen.routeName: (context) =>
+                  const ForgotPasswordScreen(),
+              SearchScreen.routName: (context) => const SearchScreen(),
+            },
           );
-        });
+        },
+      ),
+    );
   }
 }

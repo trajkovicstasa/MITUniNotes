@@ -29,10 +29,13 @@ class _ProfileScreenState extends State<ProfileScreen>
   User? user = FirebaseAuth.instance.currentUser;
 
   UserModel? userModel;
+  bool _isLoading = true;
   Future<void> fetchUserInfo() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     try {
-      setState(() {});
+      setState(() {
+        _isLoading = true;
+      });
       userModel = await userProvider.fetchUserInfo();
     } catch (error) {
       await MyAppFunctions.showErrorOrWarningDialog(
@@ -42,7 +45,9 @@ class _ProfileScreenState extends State<ProfileScreen>
         fct: () {},
       );
     } finally {
-      setState(() {});
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
     
@@ -56,9 +61,10 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
-      final themeProvider = Provider.of<ThemeProvider>(context);
-      return Scaffold(
+    user = FirebaseAuth.instance.currentUser;
+
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    return Scaffold(
         appBar: AppBar(
           leading: Padding(
             padding: const EdgeInsets.all(8.0),
@@ -81,7 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ),
               ),
           
-               userModel == null
+               user == null || userModel == null
                 ? const SizedBox.shrink()
                 : Padding(
                     padding: const EdgeInsets.symmetric(
@@ -135,7 +141,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       height: 10,
                     ),
                     Visibility(
-                    visible: userModel == null ? false : true,
+                    visible: user != null && userModel != null,
                     child: CustomListTile(
                       imagePath: "${AssetsManager.imagePath}/bag/checkout.png",
                       text: "All Orders",
@@ -146,7 +152,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
 
                       Visibility(
-                    visible: userModel == null ? false : true,
+                    visible: user != null && userModel != null,
                     child: CustomListTile(
                       imagePath: "${AssetsManager.imagePath}/bag/wishlist.png",
                       text: "Wishlist",
@@ -231,11 +237,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                       context: context,
                       subtitle: "Are you sure you want to signout?",
                       isError: false,
-                      fct: () async {
-                        await FirebaseAuth.instance.signOut();
-                        if (!mounted) return;
-                        Navigator.pushReplacementNamed(
-                            // ignore: use_build_context_synchronously
+                       fct: () async {
+                         await FirebaseAuth.instance.signOut();
+                         user = null;
+                         userModel = null;
+                         if (!mounted) return;
+                         Navigator.pushReplacementNamed(
+                             // ignore: use_build_context_synchronously
                             context,
                              LoginScreen.routeName);
                       },

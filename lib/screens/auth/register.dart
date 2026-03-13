@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +33,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _repeatPasswordFocusNode;
   final _formkey = GlobalKey<FormState>();
   XFile? _pickedImage;
+  bool _isLoading = false;
   final auth = FirebaseAuth.instance;
   @override
   void initState() {
@@ -63,29 +66,63 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _registerFCT() async {
+    if (_isLoading) {
+      return;
+    }
+
     final isValid = _formkey.currentState!.validate();
     FocusScope.of(context).unfocus();
-  
 
-   if (isValid) {
+    if (isValid) {
+      UserCredential? userCredential;
       try {
-        setState(() {});
-
-        await auth.createUserWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-        final User? user = auth.currentUser;
-        final String uid = user!.uid;
-        await FirebaseFirestore.instance.collection("users").doc(uid).set({
-          "userId": uid,
-          "userName": _nameController.text.trim(),
-          "userImage": "",
-          "userEmail": _emailController.text.trim(),
-          "createdAt": Timestamp.now(),
-          "userCart": [],
-          "userWish": [],
+        setState(() {
+          _isLoading = true;
         });
+
+        userCredential = await auth
+            .createUserWithEmailAndPassword(
+              email: _emailController.text.trim(),
+              password: _passwordController.text.trim(),
+            )
+            .timeout(const Duration(seconds: 15));
+        final User? user = userCredential.user;
+        final String uid = user!.uid;
+        try {
+          await FirebaseFirestore.instance
+              .collection("users")
+              .doc(uid)
+              .set({
+                "userId": uid,
+                "userName": _nameController.text.trim(),
+                "userImage": "",
+                "userEmail": _emailController.text.trim(),
+                "createdAt": Timestamp.now(),
+                "userCart": [],
+                "userWish": [],
+              })
+              .timeout(const Duration(seconds: 30));
+        } on FirebaseException catch (error) {
+          await user.delete();
+          await auth.signOut();
+          if (!mounted) return;
+          await MyAppFunctions.showErrorOrWarningDialog(
+            context: context,
+            subtitle: "Firestore: ${error.code} | ${error.message}",
+            fct: () {},
+          );
+          return;
+        } on TimeoutException {
+          await user.delete();
+          await auth.signOut();
+          if (!mounted) return;
+          await MyAppFunctions.showErrorOrWarningDialog(
+            context: context,
+            subtitle: "Firestore timeout. Check Firestore setup/rules and try again.",
+            fct: () {},
+          );
+          return;
+        }
         Fluttertoast.showToast(
           msg: "An account has been created",
           textColor: Colors.white,
@@ -93,21 +130,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, RootScreen.routeName);
       } on FirebaseException catch (error) {
+        if (userCredential?.user != null) {
+          await userCredential!.user!.delete();
+          await auth.signOut();
+        }
+        if (!mounted) return;
         await MyAppFunctions.showErrorOrWarningDialog(
           context: context,
           subtitle: error.message.toString(),
           fct: () {},
         );
+      } on TimeoutException {
+        if (userCredential?.user != null) {
+          await userCredential!.user!.delete();
+          await auth.signOut();
+        }
+        if (!mounted) return;
+        await MyAppFunctions.showErrorOrWarningDialog(
+          context: context,
+          subtitle: "Request timed out. Check internet connection and try again.",
+          fct: () {},
+        );
       } catch (error) {
+        if (userCredential?.user != null) {
+          await userCredential!.user!.delete();
+          await auth.signOut();
+        }
+        if (!mounted) return;
         await MyAppFunctions.showErrorOrWarningDialog(
           context: context,
           subtitle: error.toString(),
           fct: () {},
         );
       } finally {
-        setState(() {});
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
-   }
+    }
   }
 
   Future<void> localImagePicker() async {
@@ -325,11 +387,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                           ),
-                          icon: const Icon(IconlyLight.addUser),
-                          label: const Text("Sign up"),
-                          onPressed: () async {
-                            await _registerFCT();
-                          },
+                          icon: _isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(IconlyLight.addUser),
+                          label: Text(_isLoading ? "Please wait..." : "Sign up"),
+                          onPressed: _isLoading
+                              ? null
+                              : () async {
+                                  await _registerFCT();
+                                },
                         ),
                       ),
                     ],

@@ -26,7 +26,9 @@ class _LoginScreenState extends State<LoginScreen> {
   late final FocusNode _emailFocusNode;
   late final FocusNode _passwordFocusNode;
   final _formkey = GlobalKey<FormState>();
+  bool _isLoading = false;
   final auth = FirebaseAuth.instance;
+
   @override
   void initState() {
     _emailController = TextEditingController();
@@ -52,9 +54,11 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _loginFct() async {
     final isValid = _formkey.currentState!.validate();
     FocusScope.of(context).unfocus();
-     if (isValid) {
+    if (isValid) {
       try {
-        setState(() {});
+        setState(() {
+          _isLoading = true;
+        });
 
         await auth.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
@@ -79,7 +83,9 @@ class _LoginScreenState extends State<LoginScreen> {
           fct: () {},
         );
       } finally {
-        setState(() {});
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }

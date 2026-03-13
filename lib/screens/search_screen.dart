@@ -1,11 +1,9 @@
-import 'package:dynamic_height_grid_view/dynamic_height_grid_view.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:notes_hub/consts/app_colors.dart';
 import 'package:notes_hub/models/product_model.dart';
 import 'package:notes_hub/providers/products_provider.dart';
 import 'package:notes_hub/services/assets_manager.dart';
-import 'package:notes_hub/widgets/products/product_widget.dart';
 import 'package:notes_hub/widgets/title_text.dart';
 
 class SearchScreen extends StatefulWidget {
