@@ -10,6 +10,7 @@ import 'package:notes_hub/services/assets_manager.dart';
 import 'package:notes_hub/services/my_app_functions.dart';
 import 'package:notes_hub/widgets/empty_bag.dart';
 import 'package:notes_hub/widgets/title_text.dart';
+import 'package:notes_hub/widgets/uninotes_logo.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -32,10 +33,10 @@ class CartScreen extends StatefulWidget {
         ? Scaffold(
             body: EmptyBagWidget(
               imagePath: "${AssetsManager.imagePath}/bag/checkout.png",
-              title: "Your Cart is Empty",
+              title: "Nema kupljenih beleški",
               subtitle:
-                  "Looks like you haven't added \n anything to your cart yet.",
-              buttonText: "Shop Now",
+                  "Kada dodaš beleške za kupovinu, ovde ćeš videti svoju listu i ukupnu cenu.",
+              buttonText: "Istraži beleške",
             ),
           )
         : Scaffold(
@@ -47,19 +48,19 @@ class CartScreen extends StatefulWidget {
               );
             }),
             appBar: AppBar(
-              leading: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Image.asset("${AssetsManager.imagePath}/logo.png"),
+              leading: const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: UniNotesLogo(size: 34),
               ),
               title: TitelesTextWidget(
-                  label: "Cart (${cartProvider.getCartitems.length})"),
+                  label: "Kupovine (${cartProvider.getCartitems.length})"),
               actions: [
                 IconButton(
                   onPressed: () {
                     MyAppFunctions.showErrorOrWarningDialog(
                       isError: false,
                       context: context,
-                      subtitle: "Clear cart?",
+                      subtitle: "Obrisati sve stavke iz kupovine?",
                       fct: () async {
                         //cartProvider.clearLocalCart();
                         cartProvider.clearCartFromFirebase();

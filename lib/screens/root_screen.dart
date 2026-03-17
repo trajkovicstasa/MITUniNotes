@@ -11,6 +11,7 @@ import 'package:notes_hub/screens/profile_screen.dart';
 import 'package:notes_hub/screens/search_screen.dart';
 import 'package:provider/provider.dart';
 import 'dart:developer';
+
 class RootScreen extends StatefulWidget {
   static const String routeName = "/RootScreen";
   const RootScreen({super.key});
@@ -79,7 +80,7 @@ class _RootScreenState extends State<RootScreen> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentScreen,
-        height: kBottomNavigationBarHeight,
+        backgroundColor: Theme.of(context).navigationBarTheme.backgroundColor,
         onDestinationSelected: (index) {
           setState(() {
             currentScreen = index;
@@ -91,25 +92,26 @@ class _RootScreenState extends State<RootScreen> {
           const NavigationDestination(
             selectedIcon: Icon(IconlyBold.home),
             icon: Icon(IconlyLight.home),
-            label: "Home",
+            label: "Pocetna",
           ),
           const NavigationDestination(
             selectedIcon: Icon(IconlyBold.search),
             icon: Icon(IconlyLight.search),
-            label: "Search",
+            label: "Istrazi",
           ),
           NavigationDestination(
             selectedIcon: const Icon(IconlyBold.bag2),
             icon: Badge(
+                isLabelVisible: cartProvider.getCartitems.isNotEmpty,
                 backgroundColor: AppColors.darkPrimary,
                 label: Text(cartProvider.getCartitems.length.toString()),
                 child: const Icon(IconlyLight.bag2)),
-                label: "Cart",
+                label: "Kupovine",
           ),
           const NavigationDestination(
             selectedIcon: Icon(IconlyBold.profile),
             icon: Icon(IconlyLight.profile),
-            label: "Profile",
+            label: "Nalog",
           )
         ],
       ),

@@ -20,159 +20,613 @@ class ProductDetailsScreen extends StatefulWidget {
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
+    final size = MediaQuery.of(context).size;
     final productsProvider = Provider.of<ProductsProvider>(context);
-    String? productId = ModalRoute.of(context)!.settings.arguments as String?;
-    final getCurrProduct = productsProvider.findByProductId(productId!);
+    final productId = ModalRoute.of(context)!.settings.arguments as String?;
+    final currentNote = productsProvider.findByProductId(productId!);
     final cartProvider = Provider.of<CartProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
-          centerTitle: true,
-          leading: IconButton(
-            onPressed: () {
-// Navigator.canPop(context) ? Navigator.pop(context) : null;
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context);
-              }
-            },
-            icon: const Icon(
-              Icons.arrow_back_ios,
-              size: 20,
-            ),
+        centerTitle: true,
+        leading: IconButton(
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          },
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 20,
           ),
-// automaticallyImplyLeading: false,
-          title: const Text("FTN Script Store")),
-      body: getCurrProduct == null
+        ),
+        title: const Text("Detalji skripte"),
+      ),
+      body: currentNote == null
           ? const SizedBox.shrink()
           : SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  FancyShimmerImage(
-                    imageUrl: getCurrProduct.productImage,
+                  _DocumentPreviewCard(
+                    imageUrl: currentNote.productImage,
                     height: size.height * 0.38,
+                  ),
+                  const SizedBox(height: 20),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _MetaBadge(label: currentNote.productCategory),
+                      const _MetaBadge(label: "PDF skripta"),
+                      const _MetaBadge(label: "Premium"),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  TitelesTextWidget(
+                    label: currentNote.productTitle,
+                    fontSize: 28,
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 10),
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.star_rounded,
+                        color: Color(0xFFF59E0B),
+                        size: 18,
+                      ),
+                      SizedBox(width: 4),
+                      SubtitleTextWidget(
+                        label: "4.8",
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      SizedBox(width: 4),
+                      SubtitleTextWidget(
+                        label: "(12 recenzija)",
+                        fontSize: 15,
+                        color: AppColors.muted,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
                     width: double.infinity,
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                getCurrProduct.productTitle,
-                                softWrap: true,
-                                style: const TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            SubtitleTextWidget(
-                              label: "${getCurrProduct.productPrice} RSD",
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.darkPrimary,
-                            ),
-                          ],
+                        const SubtitleTextWidget(
+                          label: "Cena",
+                          fontSize: 14,
+                          color: AppColors.muted,
                         ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 30),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              HeartButtonWidget(
-                                productId: getCurrProduct.productId,
-                              ),
-                              const SizedBox(
-                                width: 20,
-                              ),
-                              Expanded(
-                                child: SizedBox(
-                                  height: kBottomNavigationBarHeight - 10,
-                                  child: ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.darkPrimary,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          30.0,
-                                        ),
-                                      ),
-                                    ),
-                                   onPressed: () async {
-                                      if (cartProvider.isProdinCart(
-                                          productId:
-                                              getCurrProduct.productId)) {
-                                        return;
-                                      }
-                                       try {
-                                        await cartProvider.addToCartFirebase(
-                                            productId: getCurrProduct.productId,
-                                            qty: 1,
-                                            context: context);
-                                      } catch (e) {
-                                        await MyAppFunctions
-                                            .showErrorOrWarningDialog(
-                                          // ignore: use_build_context_synchronously
-                                          context: context,
-                                          subtitle: e.toString(),
-                                          fct: () {},
-                                        );
-                                      }
-                                    },
-                                    icon: Icon(
-                                      cartProvider.isProdinCart(
-                                              productId:
-                                                  getCurrProduct.productId)
-                                          ? Icons.check
-                                          : Icons.add_shopping_cart_outlined,
-                                      color: Colors.white,
-                                    ),
-                                    label: Text(
-                                      cartProvider.isProdinCart(
-                                              productId:
-                                                  getCurrProduct.productId)
-                                          ? "In cart"
-                                          : "Add to cart",
-                                      style:
-                                          const TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const TitelesTextWidget(label: "About this item"),
-                            SubtitleTextWidget(
-                                label: "In ${getCurrProduct.productCategory}"),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 15,
-                        ),
+                        const SizedBox(height: 6),
                         SubtitleTextWidget(
-                            label: getCurrProduct.productDescription),
+                          label: "${currentNote.productPrice} RSD",
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.accent,
+                        ),
+                        const SizedBox(height: 16),
+                        const Divider(),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            const Expanded(
+                              child: _InfoStat(
+                                title: "Format",
+                                value: "PDF",
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _InfoStat(
+                                title: "Predmet",
+                                value: currentNote.productCategory,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _InfoStat(
+                                title: "Stranica",
+                                value: currentNote.productQuantity,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _InfoStat(
+                                title: "Objavljeno",
+                                value: _formatCreatedAt(currentNote.createdAt),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
-                  )
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      HeartButtonWidget(
+                        productId: currentNote.productId,
+                        bkgColor: Theme.of(context).cardColor,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {},
+                          icon: const Icon(Icons.visibility_outlined),
+                          label: const Text("Preview PDF"),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      onPressed: () async {
+                        if (cartProvider.isProdinCart(
+                          productId: currentNote.productId,
+                        )) {
+                          return;
+                        }
+                        try {
+                          await cartProvider.addToCartFirebase(
+                            productId: currentNote.productId,
+                            qty: 1,
+                            context: context,
+                          );
+                        } catch (e) {
+                          if (!context.mounted) {
+                            return;
+                          }
+                          await MyAppFunctions.showErrorOrWarningDialog(
+                            context: context,
+                            subtitle: e.toString(),
+                            fct: () {},
+                          );
+                        }
+                      },
+                      icon: Icon(
+                        cartProvider.isProdinCart(productId: currentNote.productId)
+                            ? Icons.check_circle_rounded
+                            : Icons.shopping_cart_checkout_rounded,
+                      ),
+                      label: Text(
+                        cartProvider.isProdinCart(productId: currentNote.productId)
+                            ? "Vec dodato u kupovine"
+                            : "Kupi skriptu",
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _DetailsSection(
+                    title: "O skripti",
+                    child: SubtitleTextWidget(
+                      label: currentNote.productDescription,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  const _DetailsSection(
+                    title: "Sta dobijas",
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _BulletLine(text: "PDF dokument spreman za pregled i kasniji download"),
+                        SizedBox(height: 8),
+                        _BulletLine(text: "Pristup kroz UniNotes nakon kupovine"),
+                        SizedBox(height: 8),
+                        _BulletLine(text: "Mesto za recenzije, komentare i ocene korisnika"),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  const _DetailsSection(
+                    title: "Ocene i komentari",
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _ReviewSummary(),
+                        SizedBox(height: 16),
+                        _CommentCard(
+                          userName: "Student PMF",
+                          rating: 5,
+                          comment:
+                              "Jasno organizovana skripta, odlican pregled gradiva i korisni primeri.",
+                        ),
+                        SizedBox(height: 12),
+                        _CommentCard(
+                          userName: "Ana S.",
+                          rating: 4,
+                          comment:
+                              "Dobar materijal za pripremu ispita. Kasnije ovde ubacujemo prave komentare iz baze.",
+                        ),
+                        SizedBox(height: 16),
+                        _LeaveReviewBox(),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
+    );
+  }
+
+  String _formatCreatedAt(dynamic createdAt) {
+    final dateTime = createdAt?.toDate();
+    if (dateTime == null) {
+      return "N/A";
+    }
+
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+
+    return "${dateTime.day} ${monthNames[dateTime.month - 1]} ${dateTime.year}";
+  }
+}
+
+class _DocumentPreviewCard extends StatelessWidget {
+  const _DocumentPreviewCard({
+    required this.imageUrl,
+    required this.height,
+  });
+
+  final String imageUrl;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(32),
+      ),
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: FancyShimmerImage(
+              imageUrl: imageUrl,
+              height: height,
+              width: double.infinity,
+              boxFit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.picture_as_pdf_rounded, color: AppColors.lightPrimary),
+                SizedBox(width: 10),
+                Expanded(
+                  child: SubtitleTextWidget(
+                    label:
+                        "Ovde ce kasnije ici preview prve strane ili thumbnail PDF dokumenta.",
+                    color: AppColors.muted,
+                    fontSize: 14,
+                    maxLines: 2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetaBadge extends StatelessWidget {
+  const _MetaBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.lightPrimary,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoStat extends StatelessWidget {
+  const _InfoStat({
+    required this.title,
+    required this.value,
+  });
+
+  final String title;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SubtitleTextWidget(
+            label: title,
+            fontSize: 13,
+            color: AppColors.muted,
+          ),
+          const SizedBox(height: 6),
+          TitelesTextWidget(
+            label: value,
+            fontSize: 16,
+            maxLines: 2,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailsSection extends StatelessWidget {
+  const _DetailsSection({
+    required this.title,
+    required this.child,
+  });
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TitelesTextWidget(label: title, fontSize: 20),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _BulletLine extends StatelessWidget {
+  const _BulletLine({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(top: 6),
+          child: Icon(
+            Icons.circle,
+            size: 8,
+            color: AppColors.lightPrimary,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: SubtitleTextWidget(
+            label: text,
+            color: AppColors.muted,
+            fontSize: 15,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReviewSummary extends StatelessWidget {
+  const _ReviewSummary();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: const Row(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TitelesTextWidget(label: "4.8", fontSize: 30),
+              SizedBox(height: 4),
+              SubtitleTextWidget(
+                label: "Prosecna ocena",
+                fontSize: 14,
+                color: AppColors.muted,
+              ),
+            ],
+          ),
+          SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _StarRow(),
+                SizedBox(height: 8),
+                SubtitleTextWidget(
+                  label: "12 korisnika je ostavilo ocenu za ovu skriptu.",
+                  fontSize: 14,
+                  color: AppColors.muted,
+                  maxLines: 2,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StarRow extends StatelessWidget {
+  const _StarRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        Icon(Icons.star_rounded, color: Color(0xFFF59E0B)),
+        Icon(Icons.star_rounded, color: Color(0xFFF59E0B)),
+        Icon(Icons.star_rounded, color: Color(0xFFF59E0B)),
+        Icon(Icons.star_rounded, color: Color(0xFFF59E0B)),
+        Icon(Icons.star_half_rounded, color: Color(0xFFF59E0B)),
+      ],
+    );
+  }
+}
+
+class _CommentCard extends StatelessWidget {
+  const _CommentCard({
+    required this.userName,
+    required this.rating,
+    required this.comment,
+  });
+
+  final String userName;
+  final int rating;
+  final String comment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TitelesTextWidget(
+                  label: userName,
+                  fontSize: 16,
+                  maxLines: 1,
+                ),
+              ),
+              Row(
+                children: List.generate(
+                  5,
+                  (index) => Icon(
+                    index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: const Color(0xFFF59E0B),
+                    size: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SubtitleTextWidget(
+            label: comment,
+            color: AppColors.muted,
+            fontSize: 14,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LeaveReviewBox extends StatelessWidget {
+  const _LeaveReviewBox();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TitelesTextWidget(
+            label: "Ostavi ocenu i komentar",
+            fontSize: 17,
+          ),
+          SizedBox(height: 8),
+          SubtitleTextWidget(
+            label:
+                "Kasnije ovde vezujemo prijavljenog korisnika, 5 zvezdica i komentar iz baze.",
+            color: AppColors.muted,
+            fontSize: 14,
+            maxLines: 3,
+          ),
+        ],
+      ),
     );
   }
 }

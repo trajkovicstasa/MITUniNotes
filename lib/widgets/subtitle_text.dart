@@ -8,7 +8,8 @@ class SubtitleTextWidget extends StatelessWidget {
       this.fontStyle = FontStyle.normal,
       this.fontWeight = FontWeight.normal,
       this.color,
-      this.textDecoration = TextDecoration.none});
+      this.textDecoration = TextDecoration.none,
+      this.maxLines});
 
   final String label;
   final double fontSize;
@@ -16,11 +17,14 @@ class SubtitleTextWidget extends StatelessWidget {
   final FontWeight? fontWeight;
   final Color? color;
   final TextDecoration textDecoration;
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
     return Text(
       label,
+      maxLines: maxLines,
+      overflow: maxLines != null ? TextOverflow.ellipsis : null,
       style: TextStyle(
         fontSize: fontSize,
         fontStyle: fontStyle,

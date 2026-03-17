@@ -36,7 +36,7 @@ final Function function;
                     FittedBox(
                         child: TitelesTextWidget(
                             label:
-                                "Total (${cartProvider.getCartitems.length} products/${cartProvider.getQty()} items)")),
+                                "Ukupno (${cartProvider.getCartitems.length} beleški/${cartProvider.getQty()} stavki)")),
                     SubtitleTextWidget(
                       label:
                           "${cartProvider.getTotal(productsProvider: productsProvider).toStringAsFixed(2)} RSD",
@@ -49,7 +49,7 @@ final Function function;
                  onPressed: () async {
                   await function();
                 },
-                child: const Text("Checkout"),
+                child: const Text("Plati"),
               ),
             ],
           ),

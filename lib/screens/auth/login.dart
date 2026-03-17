@@ -6,11 +6,11 @@ import 'package:notes_hub/consts/validator.dart';
 import 'package:notes_hub/screens/auth/forgot_password.dart';
 import 'package:notes_hub/screens/auth/register.dart';
 import 'package:notes_hub/screens/root_screen.dart';
-import 'package:notes_hub/services/assets_manager.dart';
 import 'package:notes_hub/services/my_app_functions.dart';
 import 'package:notes_hub/widgets/auth/google_btn.dart';
 import 'package:notes_hub/widgets/subtitle_text.dart';
 import 'package:notes_hub/widgets/title_text.dart';
+import 'package:notes_hub/widgets/uninotes_logo.dart';
 
 class LoginScreen extends StatefulWidget {
   static const String routeName = "/LoginScreen";
@@ -105,17 +105,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(
                   height: 60,
                 ),
-                Row(
+                 const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      "${AssetsManager.imagePath}/logo.png",
-                      height: 60,
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      "FTN Script Store",
+                    UniNotesLogo(size: 60),
+                    SizedBox(width: 12),
+                    Text(
+                      "UniNotes",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -222,9 +219,20 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ),
-                          icon: const Icon(Icons.login),
-                          label: const Text("Login"),
+                          icon: _isLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.login),
+                          label: Text(_isLoading ? "Please wait..." : "Login"),
                           onPressed: () async {
+                            if (_isLoading) {
+                              return;
+                            }
                             await _loginFct();
                           },
                         ),

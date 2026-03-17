@@ -59,7 +59,7 @@ class MyApp extends StatelessWidget {
         builder: (context, themeProvider, child) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            title: 'FTN Skriptarnica',
+            title: 'UniNotes',
             theme: Styles.themeData(
               isDarkTheme: themeProvider.getIsDarkTheme,
               context: context,

@@ -15,104 +15,135 @@ class LatestArrivalProductsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
+    final size = MediaQuery.of(context).size;
     final productModel = Provider.of<ProductModel>(context);
     final cartProvider = Provider.of<CartProvider>(context);
     final viewedProdProvider = Provider.of<ViewedProdProvider>(context);
+
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.only(right: 12),
       child: GestureDetector(
-        onTap: () async {
-           viewedProdProvider.addOrRemoveFromViewedProd(
+        onTap: () {
+          viewedProdProvider.addOrRemoveFromViewedProd(
             productId: productModel.productId,
           );
-          Navigator.pushNamed(context, ProductDetailsScreen.routName,
-              arguments: productModel.productId);
+          Navigator.pushNamed(
+            context,
+            ProductDetailsScreen.routName,
+            arguments: productModel.productId,
+          );
         },
         child: SizedBox(
-          width: size.width * 0.45,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Flexible(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0),
-                  child: FancyShimmerImage(
-                    imageUrl: productModel.productImage,
-                    height: size.width * 0.24,
-                    width: size.width * 0.32,
+          width: size.width * 0.78,
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Flexible(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: FancyShimmerImage(
+                      imageUrl: productModel.productImage,
+                      height: size.width * 0.26,
+                      width: size.width * 0.30,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(
-                width: 8,
-              ),
-              Flexible(
-                child: Column(
-                  children: [
-                    const SizedBox(
-                      height: 5,
-                    ),
-                    Text(
-                      productModel.productTitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(
-                      height: 5,
-                    ),
-                    FittedBox(
-                      child: Row(
-                        children: [
-                           HeartButtonWidget(
-                            productId: productModel.productId,
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Text(
+                          "Nova beleska",
+                          style: TextStyle(
+                            color: AppColors.lightPrimary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
                           ),
-                          IconButton(
-                           onPressed: () async {
-                              if (cartProvider.isProdinCart(
-                                  productId: productModel.productId)) {
-                                return;
-                              }
-                              try {
-                                await cartProvider.addToCartFirebase(
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        productModel.productTitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const Spacer(),
+                      FittedBox(
+                        child: Row(
+                          children: [
+                            HeartButtonWidget(
+                              productId: productModel.productId,
+                            ),
+                            IconButton(
+                              onPressed: () async {
+                                if (cartProvider.isProdinCart(
+                                  productId: productModel.productId,
+                                )) {
+                                  return;
+                                }
+                                try {
+                                  await cartProvider.addToCartFirebase(
                                     productId: productModel.productId,
                                     qty: 1,
-                                    context: context);
-                              } catch (e) {
-                                await MyAppFunctions.showErrorOrWarningDialog(
-                                  // ignore: use_build_context_synchronously
-                                  context: context,
-                                  subtitle: e.toString(),
-                                  fct: () {},
-                                );
-                              }
-                            },
-                            icon: Icon(
-                              cartProvider.isProdinCart(
-                                      productId: productModel.productId)
-                                  ? Icons.check
-                                  : Icons.add_shopping_cart_outlined,
-                              size: 20,
-                              color: AppColors.darkPrimary,
+                                    context: context,
+                                  );
+                                } catch (e) {
+                                  if (!context.mounted) {
+                                    return;
+                                  }
+                                  await MyAppFunctions.showErrorOrWarningDialog(
+                                    context: context,
+                                    subtitle: e.toString(),
+                                    fct: () {},
+                                  );
+                                }
+                              },
+                              icon: Icon(
+                                cartProvider.isProdinCart(
+                                  productId: productModel.productId,
+                                )
+                                    ? Icons.check_circle_rounded
+                                    : Icons.add_shopping_cart_outlined,
+                                size: 22,
+                                color: AppColors.lightPrimary,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(
-                      height: 5,
-                    ),
-                     FittedBox(
-                      child: SubtitleTextWidget(
+                      SubtitleTextWidget(
                         label: "${productModel.productPrice} RSD",
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.darkPrimary,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.accent,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

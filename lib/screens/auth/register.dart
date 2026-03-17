@@ -8,11 +8,11 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:notes_hub/consts/validator.dart';
 import 'package:notes_hub/screens/root_screen.dart';
-import 'package:notes_hub/services/assets_manager.dart';
 import 'package:notes_hub/services/my_app_functions.dart';
 import 'package:notes_hub/widgets/auth/image_picker_widget.dart';
 import 'package:notes_hub/widgets/subtitle_text.dart';
 import 'package:notes_hub/widgets/title_text.dart';
+import 'package:notes_hub/widgets/uninotes_logo.dart';
 
 class RegisterScreen extends StatefulWidget {
   static const routName = "/RegisterScreen";
@@ -209,17 +209,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(
                   height: 60,
                 ),
-                Row(
+                 const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      "${AssetsManager.imagePath}/logo.png",
-                      height: 60,
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      "FTN Script Store",
+                    UniNotesLogo(size: 60),
+                    SizedBox(width: 12),
+                    Text(
+                      "UniNotes",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,

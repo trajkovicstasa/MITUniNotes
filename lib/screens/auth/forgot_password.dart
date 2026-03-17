@@ -54,7 +54,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
           ),
 // automaticallyImplyLeading: false,
-          title: const Text("FTN Script Store")),
+          title: const Text("UniNotes")),
       body: GestureDetector(
         onTap: () {
           FocusScope.of(context).unfocus();

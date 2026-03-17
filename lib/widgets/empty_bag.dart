@@ -45,7 +45,9 @@ class EmptyBagWidget extends StatelessWidget {
         ElevatedButton(
           style: ElevatedButton.styleFrom(
               elevation: 0, backgroundColor: AppColors.darkPrimary),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.popUntil(context, (route) => route.isFirst);
+          },
           child: Text(
             buttonText,
             style: const TextStyle(color: Colors.white),
