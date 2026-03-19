@@ -131,16 +131,12 @@ class _ProductWidgetState extends State<ProductWidget> {
                           child: Material(
                             borderRadius: BorderRadius.circular(12.0),
                             color: AppColors.lightPrimary,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(12.0),
-                              onTap: () async {
-                                if (cartProvider.isProdinCart(
-                                    productId: getCurrProduct.productId)) {
-                                  return;
-                                }
-                                try {
-                                  await cartProvider.addToCartFirebase(
-                                      productId: getCurrProduct.productId,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12.0),
+                                onTap: () async {
+                                  try {
+                                    await cartProvider.addToCartFirebase(
+                                        productId: getCurrProduct.productId,
                                       qty: 1,
                                       context: context);
                                 } catch (e) {

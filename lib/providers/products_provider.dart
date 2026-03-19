@@ -9,6 +9,18 @@ class ProductsProvider with ChangeNotifier {
     return products;
   }
 
+  List<ProductModel> searchQuery({
+    required String searchText,
+    required List<ProductModel> passedList,
+  }) {
+    final searchList = passedList
+        .where((element) => element.productTitle
+            .toLowerCase()
+            .contains(searchText.toLowerCase()))
+        .toList();
+    return searchList;
+  }
+
   ProductModel? findByProductId(String productId) {
     if (products.where((element) => element.productId == productId).isEmpty) {
       return null;
@@ -33,7 +45,6 @@ class ProductsProvider with ChangeNotifier {
           .get()
           .then((productSnapshot) {
         products.clear();
-        // products = []
         for (var element in productSnapshot.docs) {
           products.insert(0, ProductModel.fromFirestore(element));
         }

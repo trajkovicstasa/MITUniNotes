@@ -31,6 +31,19 @@ class WishlistProvider with ChangeNotifier {
     final uid = user.uid;
     final wishlistId = const Uuid().v4();
     try {
+      final userDoc = await userstDb.doc(uid).get();
+      final data = userDoc.data();
+      final userWish = data?['userWish'] as List<dynamic>? ?? [];
+      final alreadyInWishlist = userWish.any((item) {
+        return item is Map<String, dynamic> && item['productId'] == productId;
+      });
+
+      if (alreadyInWishlist) {
+        await fetchWishlist();
+        Fluttertoast.showToast(msg: "Item is already in wishlist");
+        return;
+      }
+
       await userstDb.doc(uid).update({
         'userWish': FieldValue.arrayUnion([
           {
@@ -50,12 +63,15 @@ class WishlistProvider with ChangeNotifier {
     final User? user = _auth.currentUser;
     if (user == null) {
       _wishlistItems.clear();
+      notifyListeners();
       return;
     }
     try {
+      _wishlistItems.clear();
       final userDoc = await userstDb.doc(user.uid).get();
       final data = userDoc.data();
       if (data == null || !data.containsKey('userWish')) {
+        notifyListeners();
         return;
       }
       final leng = userDoc.get("userWish").length;
@@ -89,6 +105,7 @@ class WishlistProvider with ChangeNotifier {
       });
       _wishlistItems.remove(productId);
       Fluttertoast.showToast(msg: "Item has been removed");
+      notifyListeners();
     } catch (e) {
       rethrow;
     }
@@ -102,6 +119,7 @@ class WishlistProvider with ChangeNotifier {
       });
       _wishlistItems.clear();
       Fluttertoast.showToast(msg: "Wishlist has been cleared");
+      notifyListeners();
     } catch (e) {
       rethrow;
     }

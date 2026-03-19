@@ -74,7 +74,8 @@ class CartWidget extends StatelessWidget {
                                     ),
                                   ),
                                   HeartButtonWidget(
-                                    bkgColor: AppColors.darkPrimary,
+                                    showLabel: true,
+                                    label: 'Omiljeno',
                                     productId: getCurrProduct.productId,
                                   ),
                                 ],

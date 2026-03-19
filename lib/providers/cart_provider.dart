@@ -33,6 +33,19 @@ class CartProvider with ChangeNotifier {
     final uid = user.uid;
     final cartId = const Uuid().v4();
     try {
+      final userDoc = await userstDb.doc(uid).get();
+      final data = userDoc.data();
+      final userCart = data?['userCart'] as List<dynamic>? ?? [];
+      final alreadyInCart = userCart.any((item) {
+        return item is Map<String, dynamic> && item['productId'] == productId;
+      });
+
+      if (alreadyInCart) {
+        await fetchCart();
+        Fluttertoast.showToast(msg: "Item is already in cart");
+        return;
+      }
+
       await userstDb.doc(uid).update({
         'userCart': FieldValue.arrayUnion([
           {
@@ -65,9 +78,9 @@ class CartProvider with ChangeNotifier {
           }
         ])
       });
-      // await fetchCart();
       _cartItems.remove(productId);
       Fluttertoast.showToast(msg: "Item has been removed");
+      notifyListeners();
     } catch (e) {
       rethrow;
     }
@@ -79,9 +92,9 @@ class CartProvider with ChangeNotifier {
       await userstDb.doc(user!.uid).update({
         'userCart': [],
       });
-      // await fetchCart();
       _cartItems.clear();
       Fluttertoast.showToast(msg: "Cart has been cleared");
+      notifyListeners();
     } catch (e) {
       rethrow;
     }
@@ -91,12 +104,15 @@ class CartProvider with ChangeNotifier {
     final User? user = _auth.currentUser;
     if (user == null) {
       _cartItems.clear();
+      notifyListeners();
       return;
     }
     try {
+      _cartItems.clear();
       final userDoc = await userstDb.doc(user.uid).get();
       final data = userDoc.data();
       if (data == null || !data.containsKey('userCart')) {
+        notifyListeners();
         return;
       }
       final leng = userDoc.get("userCart").length;
@@ -130,6 +146,13 @@ class CartProvider with ChangeNotifier {
     return _cartItems.containsKey(productId);
   }
 
+  static double parsePriceValue(String rawPrice) {
+    final normalized = rawPrice
+        .replaceAll(',', '.')
+        .replaceAll(RegExp(r'[^0-9.]'), '');
+    return double.tryParse(normalized) ?? 0.0;
+  }
+
   double getTotal({required ProductsProvider productsProvider}) {
     double total = 0.0;
 
@@ -138,7 +161,7 @@ class CartProvider with ChangeNotifier {
       if (getCurrProduct == null) {
         total += 0;
       } else {
-        total += double.parse(getCurrProduct.productPrice) * value.quantity;
+        total += parsePriceValue(getCurrProduct.productPrice) * value.quantity;
       }
     });
     return total;

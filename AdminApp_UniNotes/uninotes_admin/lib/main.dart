@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uninotes_admin/consts/theme_data.dart';
 import 'package:uninotes_admin/models/admin_nav_item.dart';
+import 'package:uninotes_admin/providers/products_provider.dart';
 import 'package:uninotes_admin/screens/dashboard_screen.dart';
 import 'package:uninotes_admin/screens/purchases_screen.dart';
 import 'package:uninotes_admin/screens/reviews_screen.dart';
@@ -52,8 +53,11 @@ class MyApp extends StatelessWidget {
             ),
           );
         }
-        return ChangeNotifierProvider(
-          create: (_) => AdminNavigationController(),
+        return MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => AdminNavigationController()),
+            ChangeNotifierProvider(create: (_) => ProductsProvider()),
+          ],
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
             title: 'UniNotes Admin',

@@ -144,7 +144,7 @@ class HomeScreen extends StatelessWidget {
               Visibility(
                 visible: latestNotes.isNotEmpty,
                 child: SizedBox(
-                  height: size.height * 0.24,
+                  height: size.height * 0.27,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: latestNotes.length,

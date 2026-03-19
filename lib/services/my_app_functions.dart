@@ -72,9 +72,9 @@ class MyAppFunctions {
 
   static Future<void> imagePickerDialog({
     required BuildContext context,
-    required Function cameraFCT,
-    required Function galleryFCT,
-    required Function removeFCT,
+    required Future<void> Function() cameraFCT,
+    required Future<void> Function() galleryFCT,
+    required Future<void> Function() removeFCT,
   }) async {
     await showDialog(
         context: context,
@@ -89,9 +89,9 @@ class MyAppFunctions {
               child: ListBody(
                 children: [
                   TextButton.icon(
-                    onPressed: () {
-                      cameraFCT();
-                      if (Navigator.canPop(context)) {
+                    onPressed: () async {
+                      await cameraFCT();
+                      if (context.mounted && Navigator.canPop(context)) {
                         Navigator.pop(context);
                       }
                     },
@@ -99,9 +99,9 @@ class MyAppFunctions {
                     label: const Text("Camera"),
                   ),
                   TextButton.icon(
-                    onPressed: () {
-                      galleryFCT();
-                      if (Navigator.canPop(context)) {
+                    onPressed: () async {
+                      await galleryFCT();
+                      if (context.mounted && Navigator.canPop(context)) {
                         Navigator.pop(context);
                       }
                     },
@@ -111,9 +111,9 @@ class MyAppFunctions {
                     label: const Text("Gallery"),
                   ),
                   TextButton.icon(
-                    onPressed: () {
-                      removeFCT();
-                      if (Navigator.canPop(context)) {
+                    onPressed: () async {
+                      await removeFCT();
+                      if (context.mounted && Navigator.canPop(context)) {
                         Navigator.pop(context);
                       }
                     },

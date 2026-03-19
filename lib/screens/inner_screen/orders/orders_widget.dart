@@ -35,22 +35,14 @@ class _OrdersWidgetState extends State<OrdersWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                        Flexible(
+                      Flexible(
                         child: TitelesTextWidget(
-                           label: widget.ordersModel.productTitle,
+                          label: widget.ordersModel.productTitle,
                           maxLines: 2,
                           fontSize: 15,
                         ),
                       ),
-                      IconButton(
-                          onPressed: () {},
-                          icon: const Icon(
-                            Icons.clear,
-                            color: Colors.red,
-                            size: 22,
-                          )),
                     ],
                   ),
                     Row(

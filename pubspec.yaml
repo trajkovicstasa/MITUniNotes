@@ -47,6 +47,7 @@ dependencies:
   card_swiper: ^3.0.1
   image_picker: 0.8.7+5
   fluttertoast: ^8.2.2
+  http: ^1.2.0
   # Utils
   uuid: ^3.0.7
 

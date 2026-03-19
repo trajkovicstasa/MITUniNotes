@@ -183,11 +183,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         ),
                       ),
                       onPressed: () async {
-                        if (cartProvider.isProdinCart(
-                          productId: currentNote.productId,
-                        )) {
-                          return;
-                        }
                         try {
                           await cartProvider.addToCartFirebase(
                             productId: currentNote.productId,

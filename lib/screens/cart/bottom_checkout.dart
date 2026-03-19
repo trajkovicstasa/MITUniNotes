@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 class CartBottomSheetWidget extends StatelessWidget {
 const CartBottomSheetWidget({super.key, required this.function});
 
-final Function function;
+final Future<void> Function() function;
 
   @override
   Widget build(BuildContext context) {

@@ -26,11 +26,13 @@ class WishlistScreen extends StatelessWidget {
           )
         : Scaffold(
             appBar: AppBar(
-              leading: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Image.asset(
-                  "${AssetsManager.imagePath}/bag/wishlist.png",
-                ),
+              leading: IconButton(
+                onPressed: () {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                },
+                icon: const Icon(Icons.arrow_back_ios_new_rounded),
               ),
               title: TitelesTextWidget(
               label: "Wishlist (${wishlistProvider.getWishlists.length})"),

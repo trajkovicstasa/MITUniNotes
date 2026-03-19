@@ -49,7 +49,7 @@ class DashboardShell extends StatelessWidget {
           Expanded(
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.fromLTRB(isWide ? 24 : 4, 24, 24, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -57,6 +57,11 @@ class DashboardShell extends StatelessWidget {
                       Builder(
                         builder: (context) {
                           return IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 28,
+                              minHeight: 28,
+                            ),
                             onPressed: () {
                               Scaffold.of(context).openDrawer();
                             },
@@ -64,6 +69,7 @@ class DashboardShell extends StatelessWidget {
                           );
                         },
                       ),
+                    if (!isWide) const SizedBox(height: 18),
                     AppTitleText(label: title, fontSize: 30),
                     const SizedBox(height: 6),
                     AppSubtitleText(label: subtitle, maxLines: 2),
@@ -96,79 +102,84 @@ class _AdminSidebar extends StatelessWidget {
     return Container(
       color: Colors.white,
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const UniNotesAdminLogo(),
-              const SizedBox(height: 28),
-              const AppSubtitleText(
-                label: 'Navigacija',
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-              const SizedBox(height: 12),
-              ...List.generate(items.length, (index) {
-                final item = items[index];
-                final isSelected = index == currentIndex;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Material(
-                    color: isSelected
-                        ? AppColors.primary.withValues(alpha: 0.10)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(18),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: () => onSelect(index),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              item.icon,
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : AppColors.muted,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const UniNotesAdminLogo(),
+                  const SizedBox(height: 28),
+                  const AppSubtitleText(
+                    label: 'Navigacija',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  const SizedBox(height: 12),
+                  ...List.generate(items.length, (index) {
+                    final item = items[index];
+                    final isSelected = index == currentIndex;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Material(
+                        color: isSelected
+                            ? AppColors.primary.withValues(alpha: 0.10)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(18),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(18),
+                          onTap: () => onSelect(index),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: AppSubtitleText(
-                                label: item.label,
-                                color: isSelected
-                                    ? AppColors.primary
-                                    : AppColors.text,
-                                fontWeight: isSelected
-                                    ? FontWeight.w700
-                                    : FontWeight.w600,
-                              ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  item.icon,
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : AppColors.muted,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: AppSubtitleText(
+                                    label: item.label,
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : AppColors.text,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
+                    );
+                  }),
+                  const SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.scaffold,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: const AppSubtitleText(
+                      label:
+                          'Admin app je odvojena od korisnicke aplikacije i sluzi za moderaciju sadrzaja.',
+                      maxLines: 4,
                     ),
                   ),
-                );
-              }),
-              const Spacer(),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.scaffold,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const AppSubtitleText(
-                  label:
-                      'Admin app je odvojena od korisnicke aplikacije i sluzi za moderaciju sadrzaja.',
-                  maxLines: 4,
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

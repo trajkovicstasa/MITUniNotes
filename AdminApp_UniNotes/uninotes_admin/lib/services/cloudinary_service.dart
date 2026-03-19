@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 
 class CloudinaryService {
   static const String cloudName = "dxnmo1cin";
-  static const String uploadPreset = "flutter_unsigned";
+  static const String uploadPreset = "uninotes_covers";
 
   static Future<String> uploadImage(File file) async {
     final uri =

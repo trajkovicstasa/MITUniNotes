@@ -68,8 +68,13 @@ class _SearchScreenState extends State<SearchScreen> {
             if (snapshot.hasError) {
               return Center(child: SelectableText(snapshot.error.toString()));
             }
+            if (snapshot.data == null) {
+              return const Center(
+                child: SelectableText("No products has been added"),
+              );
+            }
 
-            final allNotes = snapshot.data ?? [];
+            final allNotes = snapshot.data!;
             final categoryFiltered = passedCategory == null
                 ? allNotes
                 : allNotes
@@ -78,14 +83,13 @@ class _SearchScreenState extends State<SearchScreen> {
                         .contains(passedCategory.toLowerCase()))
                     .toList();
 
-            final query = searchTextController.text.trim().toLowerCase();
+            final query = searchTextController.text.trim();
             final visibleNotes = query.isEmpty
                 ? categoryFiltered
-                : categoryFiltered.where((note) {
-                    return note.productTitle.toLowerCase().contains(query) ||
-                        note.productCategory.toLowerCase().contains(query) ||
-                        note.productDescription.toLowerCase().contains(query);
-                  }).toList();
+                : productsProvider.searchQuery(
+                    searchText: query,
+                    passedList: categoryFiltered,
+                  );
 
             return CustomScrollView(
               slivers: [

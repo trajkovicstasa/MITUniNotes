@@ -48,11 +48,11 @@ class _RootScreenState extends State<RootScreen> {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
     try {
-      Future.wait({
+      await Future.wait({
         productsProvider.fetchProducts(),
         userProvider.fetchUserInfo(),
       });
-      Future.wait({
+      await Future.wait({
         cartProvider.fetchCart(),
         wishlistsProvider.fetchWishlist(),
       });
@@ -65,6 +65,7 @@ class _RootScreenState extends State<RootScreen> {
   void didChangeDependencies() {
     if (isLoadingProd) {
       fetchFCT();
+      isLoadingProd = false;
     }
     super.didChangeDependencies();
   }

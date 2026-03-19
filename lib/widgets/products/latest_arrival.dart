@@ -49,8 +49,8 @@ class LatestArrivalProductsWidget extends StatelessWidget {
                     borderRadius: BorderRadius.circular(18),
                     child: FancyShimmerImage(
                       imageUrl: productModel.productImage,
-                      height: size.width * 0.26,
-                      width: size.width * 0.30,
+                      height: size.width * 0.22,
+                      width: size.width * 0.26,
                     ),
                   ),
                 ),
@@ -90,7 +90,7 @@ class LatestArrivalProductsWidget extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(height: 8),
                       FittedBox(
                         child: Row(
                           children: [
@@ -99,11 +99,6 @@ class LatestArrivalProductsWidget extends StatelessWidget {
                             ),
                             IconButton(
                               onPressed: () async {
-                                if (cartProvider.isProdinCart(
-                                  productId: productModel.productId,
-                                )) {
-                                  return;
-                                }
                                 try {
                                   await cartProvider.addToCartFirebase(
                                     productId: productModel.productId,
@@ -134,6 +129,7 @@ class LatestArrivalProductsWidget extends StatelessWidget {
                           ],
                         ),
                       ),
+                      const SizedBox(height: 2),
                       SubtitleTextWidget(
                         label: "${productModel.productPrice} RSD",
                         fontWeight: FontWeight.w700,

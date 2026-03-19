@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,8 +9,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:notes_hub/consts/validator.dart';
 import 'package:notes_hub/screens/root_screen.dart';
+import 'package:notes_hub/services/cloudinary_service.dart';
 import 'package:notes_hub/services/my_app_functions.dart';
-import 'package:notes_hub/widgets/auth/image_picker_widget.dart';
 import 'package:notes_hub/widgets/subtitle_text.dart';
 import 'package:notes_hub/widgets/title_text.dart';
 import 'package:notes_hub/widgets/uninotes_logo.dart';
@@ -88,6 +89,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             .timeout(const Duration(seconds: 15));
         final User? user = userCredential.user;
         final String uid = user!.uid;
+        String userImageUrl = '';
+        if (_pickedImage != null) {
+          userImageUrl = await CloudinaryService.uploadImage(
+            File(_pickedImage!.path),
+          );
+        }
         try {
           await FirebaseFirestore.instance
               .collection("users")
@@ -95,7 +102,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               .set({
                 "userId": uid,
                 "userName": _nameController.text.trim(),
-                "userImage": "",
+                "userImage": userImageUrl,
                 "userEmail": _emailController.text.trim(),
                 "createdAt": Timestamp.now(),
                 "userCart": [],
@@ -184,7 +191,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _pickedImage = await imagePicker.pickImage(source: ImageSource.gallery);
         setState(() {});
       },
-      removeFCT: () {
+      removeFCT: () async {
         setState(() {
           _pickedImage = null;
         });
@@ -194,7 +201,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -228,25 +234,99 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   height: 30,
                 ),
                 const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TitelesTextWidget(label: "Welcome back!"),
-                        SubtitleTextWidget(label: "Your welcome message"),
-                      ],
-                    )),
+                  alignment: Alignment.centerLeft,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TitelesTextWidget(label: "Napravi nalog"),
+                      SubtitleTextWidget(
+                        label: "Dodaj podatke i opciono postavi profilnu sliku.",
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(
                   height: 30,
                 ),
-                SizedBox(
-                  height: size.width * 0.3,
-                  width: size.width * 0.3,
-                  child: PickImageWidget(
-                    pickedImage: _pickedImage,
-                    function: () async {
-                      await localImagePicker();
-                    },
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 76,
+                        height: 76,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor,
+                          ),
+                        ),
+                        child: ClipOval(
+                          child: _pickedImage == null
+                              ? Icon(
+                                  Icons.person_rounded,
+                                  size: 36,
+                                  color: Theme.of(context).colorScheme.primary,
+                                )
+                              : Image.file(
+                                  File(_pickedImage!.path),
+                                  fit: BoxFit.cover,
+                                ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const TitelesTextWidget(
+                              label: "Profilna slika",
+                              fontSize: 18,
+                            ),
+                            const SizedBox(height: 4),
+                            const SubtitleTextWidget(
+                              label:
+                                  "Moze odmah pri registraciji ili kasnije sa profila.",
+                              maxLines: 2,
+                            ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: () async {
+                                    await localImagePicker();
+                                  },
+                                  icon: const Icon(Icons.add_a_photo_outlined),
+                                  label: Text(
+                                    _pickedImage == null
+                                        ? "Dodaj sliku"
+                                        : "Promeni sliku",
+                                  ),
+                                ),
+                                if (_pickedImage != null)
+                                  TextButton.icon(
+                                    onPressed: () {
+                                      setState(() {
+                                        _pickedImage = null;
+                                      });
+                                    },
+                                    icon: const Icon(Icons.delete_outline),
+                                    label: const Text("Ukloni"),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(

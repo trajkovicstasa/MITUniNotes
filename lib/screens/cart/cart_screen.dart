@@ -16,13 +16,14 @@ import 'package:uuid/uuid.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
-  
+
   @override
   State<CartScreen> createState() => _CartScreenState();
-   
-  }
+}
 
-  class _CartScreenState extends State<CartScreen> {
+class _CartScreenState extends State<CartScreen> {
+  bool _isLoading = false;
+
   @override
   Widget build(BuildContext context) {
     final productsProvider =
@@ -41,6 +42,9 @@ class CartScreen extends StatefulWidget {
           )
         : Scaffold(
             bottomSheet: CartBottomSheetWidget(function: () async {
+              if (_isLoading) {
+                return;
+              }
               await placeOrder(
                 cartProvider: cartProvider,
                 productProvider: productsProvider,
@@ -56,7 +60,9 @@ class CartScreen extends StatefulWidget {
                   label: "Kupovine (${cartProvider.getCartitems.length})"),
               actions: [
                 IconButton(
-                  onPressed: () {
+                  onPressed: _isLoading
+                      ? null
+                      : () {
                     MyAppFunctions.showErrorOrWarningDialog(
                       isError: false,
                       context: context,
@@ -83,6 +89,11 @@ class CartScreen extends StatefulWidget {
                             child: const CartWidget());
                       }),
                 ),
+                if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: CircularProgressIndicator(),
+                  ),
                 const SizedBox(
                   height: kBottomNavigationBarHeight + 10,
                 ),
@@ -103,8 +114,10 @@ class CartScreen extends StatefulWidget {
     }
     final uid = user.uid;
     try {
-      setState(() {});
-      cartProvider.getCartitems.forEach((key, value) async {
+      setState(() {
+        _isLoading = true;
+      });
+      for (final value in cartProvider.getCartitems.values) {
         final getCurrProduct = productProvider.findByProductId(value.productId);
         final orderId = const Uuid().v4();
         await FirebaseFirestore.instance.collection("orders").doc(orderId).set({
@@ -112,7 +125,9 @@ class CartScreen extends StatefulWidget {
           'userId': uid,
           'productId': value.productId,
           "productTitle": getCurrProduct!.productTitle,
-          'price': double.parse(getCurrProduct.productPrice) * value.quantity,
+          'price':
+              CartProvider.parsePriceValue(getCurrProduct.productPrice) *
+              value.quantity,
           'totalPrice':
               cartProvider.getTotal(productsProvider: productProvider),
           'quantity': value.quantity,
@@ -120,7 +135,7 @@ class CartScreen extends StatefulWidget {
           'userName': userProvider.getUserModel!.userName,
           'orderDate': Timestamp.now(),
         });
-      });
+      }
       await cartProvider.clearCartFromFirebase();
       cartProvider.clearLocalCart();
     } catch (e) {
@@ -131,7 +146,11 @@ class CartScreen extends StatefulWidget {
         fct: () {},
       );
     } finally {
-      setState(() {});
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 }

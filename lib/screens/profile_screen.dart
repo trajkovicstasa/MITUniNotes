@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_iconly/flutter_iconly.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:notes_hub/consts/app_colors.dart';
 import 'package:notes_hub/models/user_model.dart';
 import 'package:notes_hub/providers/theme_provider.dart';
@@ -10,11 +12,13 @@ import 'package:notes_hub/screens/inner_screen/orders/orders_screen.dart';
 import 'package:notes_hub/screens/inner_screen/viewed_recently.dart';
 import 'package:notes_hub/screens/inner_screen/wishlist.dart';
 import 'package:notes_hub/services/assets_manager.dart';
+import 'package:notes_hub/services/cloudinary_service.dart';
 import 'package:notes_hub/services/my_app_functions.dart';
 import 'package:notes_hub/widgets/subtitle_text.dart';
 import 'package:notes_hub/widgets/title_text.dart';
 import 'package:notes_hub/widgets/uninotes_logo.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -30,6 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   User? user = FirebaseAuth.instance.currentUser;
   UserModel? userModel;
+  bool _isUpdatingImage = false;
 
   Future<void> fetchUserInfo() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -56,12 +61,90 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.initState();
   }
 
+  Future<void> _changeProfileImage() async {
+    if (user == null || _isUpdatingImage) {
+      return;
+    }
+
+    final imagePicker = ImagePicker();
+    XFile? pickedImage;
+    await MyAppFunctions.imagePickerDialog(
+      context: context,
+      cameraFCT: () async {
+        pickedImage = await imagePicker.pickImage(source: ImageSource.camera);
+      },
+      galleryFCT: () async {
+        pickedImage = await imagePicker.pickImage(source: ImageSource.gallery);
+      },
+      removeFCT: () async {
+        setState(() {
+          _isUpdatingImage = true;
+        });
+        try {
+          await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({
+            'userImage': '',
+          });
+          await fetchUserInfo();
+        } catch (error) {
+          if (!mounted) {
+            return;
+          }
+          await MyAppFunctions.showErrorOrWarningDialog(
+            context: context,
+            subtitle: error.toString(),
+            fct: () {},
+          );
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isUpdatingImage = false;
+            });
+          }
+        }
+      },
+    );
+
+    if (pickedImage == null || !mounted) {
+      return;
+    }
+
+    try {
+      setState(() {
+        _isUpdatingImage = true;
+      });
+      final imageUrl = await CloudinaryService.uploadImage(
+        File(pickedImage!.path),
+      );
+      await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({
+        'userImage': imageUrl,
+      });
+      await fetchUserInfo();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      await MyAppFunctions.showErrorOrWarningDialog(
+        context: context,
+        subtitle: error.toString(),
+        fct: () {},
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdatingImage = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     user = FirebaseAuth.instance.currentUser;
 
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final profileImage = userModel?.userImage.trim() ?? '';
+    final hasValidProfileImage = profileImage.startsWith('http');
 
     return Scaffold(
       appBar: AppBar(
@@ -88,31 +171,109 @@ class _ProfileScreenState extends State<ProfileScreen>
               Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Theme.of(context).cardColor,
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.surface,
-                          width: 3,
-                        ),
-                        image: DecorationImage(
-                          image: NetworkImage(userModel!.userImage),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Row(
                       children: [
-                        TitelesTextWidget(label: userModel!.userName),
-                        SubtitleTextWidget(label: userModel!.userEmail),
+                        Stack(
+                          children: [
+                            Container(
+                              width: 72,
+                              height: 72,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Theme.of(context).cardColor,
+                                border: Border.all(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  width: 3,
+                                ),
+                              ),
+                              child: ClipOval(
+                                child: !hasValidProfileImage
+                                    ? Icon(
+                                        Icons.person_rounded,
+                                        size: 34,
+                                        color:
+                                            Theme.of(context).colorScheme.primary,
+                                      )
+                                    : Image.network(
+                                        profileImage,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          return Icon(
+                                            Icons.person_rounded,
+                                            size: 34,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          );
+                                        },
+                                      ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: Material(
+                                color: AppColors.lightPrimary,
+                                shape: const CircleBorder(),
+                                child: InkWell(
+                                  customBorder: const CircleBorder(),
+                                  onTap:
+                                      _isUpdatingImage ? null : _changeProfileImage,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(7),
+                                    child: _isUpdatingImage
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.camera_alt_rounded,
+                                            size: 16,
+                                            color: Colors.white,
+                                          ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TitelesTextWidget(label: userModel!.userName),
+                              SubtitleTextWidget(label: userModel!.userEmail),
+                            ],
+                          ),
+                        ),
                       ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: _isUpdatingImage ? null : _changeProfileImage,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 32),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      icon: const Icon(
+                        Icons.camera_alt_rounded,
+                        size: 16,
+                      ),
+                      label: Text(
+                        hasValidProfileImage
+                            ? "Promeni profilnu sliku"
+                            : "Dodaj profilnu sliku",
+                      ),
                     ),
                   ],
                 ),
