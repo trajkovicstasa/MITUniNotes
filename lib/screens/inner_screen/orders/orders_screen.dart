@@ -8,7 +8,7 @@ import 'package:notes_hub/widgets/title_text.dart';
 import 'package:provider/provider.dart';
 
 class OrdersScreen extends StatefulWidget {
-  static const routeName = '/OrderScreen';
+  static const routeName = '/moje-kupovine';
   const OrdersScreen({super.key});
   @override
   State<OrdersScreen> createState() => _OrdersScreenState();
@@ -22,7 +22,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return Scaffold(
         appBar: AppBar(
           title: const TitelesTextWidget(
-            label: 'Placed orders',
+            label: 'Moje kupovine',
           ),
         ),
          body: FutureBuilder<List<OrdersModel>>(
@@ -39,9 +39,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
             } else if (!snapshot.hasData || ordersProvider.getOrders.isEmpty) {
               return EmptyBagWidget(
                 imagePath: "${AssetsManager.imagePath}/bag/checkout.png",
-                title: "No orders has been placed yet",
+                title: "Jos nema zavrsenih kupovina",
                 subtitle: "",
-                buttonText: "Shop now",
+                buttonText: "Istrazi skripte",
               );
             }
             return ListView.separated(

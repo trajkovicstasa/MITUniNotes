@@ -9,7 +9,7 @@ import 'package:notes_hub/widgets/title_text.dart';
 import 'package:provider/provider.dart';
 
 class WishlistScreen extends StatelessWidget {
-  static const routName = "/WishlistScreen";
+  static const routName = "/sacuvane-skripte";
   const WishlistScreen({super.key});
   final bool isEmpty = true;
   @override
@@ -19,9 +19,9 @@ class WishlistScreen extends StatelessWidget {
         ? Scaffold(
             body: EmptyBagWidget(
               imagePath: "${AssetsManager.imagePath}/bag/wishlist.png",
-              title: "Nothing in ur wishlist yet",
-              subtitle: "Looks like your cart is empty.",
-              buttonText: "Shop now",
+              title: "Jos nemas sacuvanih skripti",
+              subtitle: "Ovde ces videti skripte koje oznacis kao omiljene.",
+              buttonText: "Istrazi skripte",
             ),
           )
         : Scaffold(
@@ -35,14 +35,14 @@ class WishlistScreen extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back_ios_new_rounded),
               ),
               title: TitelesTextWidget(
-              label: "Wishlist (${wishlistProvider.getWishlists.length})"),
+              label: "Sacuvane skripte (${wishlistProvider.getWishlists.length})"),
               actions: [
                 IconButton(
                   onPressed: () {
                     MyAppFunctions.showErrorOrWarningDialog(
                       isError: false,
                       context: context,
-                      subtitle: "Clear wishlist?",
+                      subtitle: "Obrisati sve sacuvane skripte?",
                        fct: () async {
                         await wishlistProvider.clearWishlistFromFirebase();
                         //wishlistProvider.clearLocalWishlist();

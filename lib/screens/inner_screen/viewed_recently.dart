@@ -8,7 +8,7 @@ import 'package:notes_hub/widgets/title_text.dart';
 import 'package:provider/provider.dart';
 
 class ViewedRecentlyScreen extends StatelessWidget {
-  static const routName = "/ViewedRecentlyScreen";
+  static const routName = "/nedavno-pregledano";
   const ViewedRecentlyScreen({super.key});
   final bool isEmpty = false;
   @override
@@ -18,9 +18,9 @@ class ViewedRecentlyScreen extends StatelessWidget {
         ? Scaffold(
             body: EmptyBagWidget(
               imagePath: "${AssetsManager.imagePath}/bag/checkout.png",
-              title: "No viewed products yet",
-              subtitle: "Looks like your history is empty.",
-              buttonText: "Shop now",
+              title: "Jos nema nedavno pregledanih skripti",
+              subtitle: "Ovde ce se cuvati istorija skripti koje otvoris.",
+              buttonText: "Istrazi skripte",
             ),
           )
         : Scaffold(
@@ -33,7 +33,7 @@ class ViewedRecentlyScreen extends StatelessWidget {
               ),
               title: TitelesTextWidget(
                   label:
-                      "Viewed recently (${viewedProdProvider.getViewedProds.length})"),
+                      "Nedavno pregledano (${viewedProdProvider.getViewedProds.length})"),
               // actions: [
               //   IconButton(
               //     onPressed: () {},

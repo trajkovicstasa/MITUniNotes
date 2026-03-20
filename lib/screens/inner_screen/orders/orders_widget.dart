@@ -48,7 +48,7 @@ class _OrdersWidgetState extends State<OrdersWidget> {
                     Row(
                     children: [
                     const TitelesTextWidget(
-                        label: 'Price: ',
+                        label: 'Cena: ',
                         fontSize: 15,
                       ),
                       Flexible(
@@ -64,7 +64,7 @@ class _OrdersWidgetState extends State<OrdersWidget> {
                     height: 5,
                   ),
                   SubtitleTextWidget(
-                    label: "Qty: ${widget.ordersModel.quantity}",
+                    label: "Kolicina: ${widget.ordersModel.quantity}",
                     fontSize: 15,
                   ),
                   const SizedBox(

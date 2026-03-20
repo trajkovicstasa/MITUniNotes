@@ -30,64 +30,68 @@ class _CartScreenState extends State<CartScreen> {
         Provider.of<ProductsProvider>(context, listen: false);
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final cartProvider = Provider.of<CartProvider>(context);
+
     return cartProvider.getCartitems.isEmpty
         ? Scaffold(
             body: EmptyBagWidget(
               imagePath: "${AssetsManager.imagePath}/bag/checkout.png",
-              title: "Nema kupljenih beleški",
+              title: "Korpa je trenutno prazna",
               subtitle:
-                  "Kada dodaš beleške za kupovinu, ovde ćeš videti svoju listu i ukupnu cenu.",
-              buttonText: "Istraži beleške",
+                  "Kada dodas skripte za kupovinu, ovde ces videti svoju listu i ukupnu cenu.",
+              buttonText: "Istrazi skripte",
             ),
           )
         : Scaffold(
-            bottomSheet: CartBottomSheetWidget(function: () async {
-              if (_isLoading) {
-                return;
-              }
-              await placeOrder(
-                cartProvider: cartProvider,
-                productProvider: productsProvider,
-                userProvider: userProvider,
-              );
-            }),
+            bottomSheet: CartBottomSheetWidget(
+              function: () async {
+                if (_isLoading) {
+                  return;
+                }
+                await placeOrder(
+                  cartProvider: cartProvider,
+                  productProvider: productsProvider,
+                  userProvider: userProvider,
+                );
+              },
+            ),
             appBar: AppBar(
               leading: const Padding(
                 padding: EdgeInsets.all(8.0),
                 child: UniNotesLogo(size: 34),
               ),
               title: TitelesTextWidget(
-                  label: "Kupovine (${cartProvider.getCartitems.length})"),
+                label: "Kupovine (${cartProvider.getCartitems.length})",
+              ),
               actions: [
                 IconButton(
                   onPressed: _isLoading
                       ? null
                       : () {
-                    MyAppFunctions.showErrorOrWarningDialog(
-                      isError: false,
-                      context: context,
-                      subtitle: "Obrisati sve stavke iz kupovine?",
-                      fct: () async {
-                        //cartProvider.clearLocalCart();
-                        cartProvider.clearCartFromFirebase();
-                      },
-                    );
-                  },
+                          MyAppFunctions.showErrorOrWarningDialog(
+                            isError: false,
+                            context: context,
+                            subtitle: "Obrisati sve stavke iz korpe?",
+                            fct: () async {
+                              await cartProvider.clearCartFromFirebase();
+                            },
+                          );
+                        },
                   icon: const Icon(Icons.delete_forever_rounded),
-                )
+                ),
               ],
             ),
             body: Column(
               children: [
                 Expanded(
                   child: ListView.builder(
-                      itemCount: cartProvider.getCartitems.length,
-                      itemBuilder: (context, index) {
-                        return ChangeNotifierProvider.value(
-                            value: cartProvider.getCartitems.values
-                                .toList()[index],
-                            child: const CartWidget());
-                      }),
+                    itemCount: cartProvider.getCartitems.length,
+                    itemBuilder: (context, index) {
+                      return ChangeNotifierProvider.value(
+                        value: cartProvider.getCartitems.values.toList()[index],
+                        child: const CartWidget(),
+                      );
+                    },
+                  ),
                 ),
                 if (_isLoading)
                   const Padding(
@@ -101,22 +105,24 @@ class _CartScreenState extends State<CartScreen> {
             ),
           );
   }
-  
+
   Future<void> placeOrder({
     required CartProvider cartProvider,
     required ProductsProvider productProvider,
     required UserProvider userProvider,
   }) async {
     final auth = FirebaseAuth.instance;
-    User? user = auth.currentUser;
+    final user = auth.currentUser;
     if (user == null) {
       return;
     }
+
     final uid = user.uid;
     try {
       setState(() {
         _isLoading = true;
       });
+
       for (final value in cartProvider.getCartitems.values) {
         final getCurrProduct = productProvider.findByProductId(value.productId);
         final orderId = const Uuid().v4();
@@ -127,20 +133,22 @@ class _CartScreenState extends State<CartScreen> {
           "productTitle": getCurrProduct!.productTitle,
           'price':
               CartProvider.parsePriceValue(getCurrProduct.productPrice) *
-              value.quantity,
-          'totalPrice':
-              cartProvider.getTotal(productsProvider: productProvider),
+                  value.quantity,
+          'totalPrice': cartProvider.getTotal(productsProvider: productProvider),
           'quantity': value.quantity,
           'imageUrl': getCurrProduct.productImage,
           'userName': userProvider.getUserModel!.userName,
           'orderDate': Timestamp.now(),
         });
       }
+
       await cartProvider.clearCartFromFirebase();
       cartProvider.clearLocalCart();
     } catch (e) {
+      if (!mounted) {
+        return;
+      }
       await MyAppFunctions.showErrorOrWarningDialog(
-        // ignore: use_build_context_synchronously
         context: context,
         subtitle: e.toString(),
         fct: () {},

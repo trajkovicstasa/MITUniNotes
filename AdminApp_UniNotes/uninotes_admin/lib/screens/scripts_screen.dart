@@ -46,7 +46,7 @@ class _ScriptsScreenState extends State<ScriptsScreen> {
         }
         if (snapshot.data == null) {
           return const Center(
-            child: SelectableText("No products has been added"),
+            child: SelectableText("Jos nema dodatih skripti"),
           );
         }
 
@@ -60,9 +60,9 @@ class _ScriptsScreenState extends State<ScriptsScreen> {
 
         return SingleChildScrollView(
           child: SectionCard(
-            title: 'Inspect All Products',
+            title: 'Sve skripte',
             subtitle:
-                'Pregled svih proizvoda iz baze sa pretragom i ulazom u edit formu.',
+                'Pregled svih skripti iz baze sa pretragom i ulazom u formu za izmenu.',
             child: Column(
               children: [
                 Row(
@@ -74,7 +74,7 @@ class _ScriptsScreenState extends State<ScriptsScreen> {
                           setState(() {});
                         },
                         decoration: InputDecoration(
-                          hintText: 'Search by product title',
+                          hintText: 'Pretraga po naslovu skripte',
                           prefixIcon: const Icon(Icons.search_rounded),
                           suffixIcon: searchTextController.text.isEmpty
                               ? null
@@ -119,7 +119,7 @@ class _ScriptsScreenState extends State<ScriptsScreen> {
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: const AppSubtitleText(
-                      label: 'Nema proizvoda za prikaz.',
+                      label: 'Nema skripti za prikaz.',
                       color: AppColors.text,
                     ),
                   )
@@ -168,7 +168,7 @@ class _ScriptsScreenState extends State<ScriptsScreen> {
                                 const SizedBox(height: 4),
                                 AppSubtitleText(
                                   label:
-                                      'Predmet: ${product.productCategory} | Cena: ${product.productPrice}',
+                                      'Predmet: ${product.productCategory} | ${product.isFree ? 'Besplatna' : 'Premium'} | Cena: ${product.productPrice}',
                                   maxLines: 1,
                                 ),
                                 const SizedBox(height: 6),

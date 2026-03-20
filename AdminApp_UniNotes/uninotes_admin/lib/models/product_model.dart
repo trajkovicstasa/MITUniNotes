@@ -9,6 +9,9 @@ class ProductModel with ChangeNotifier {
   final String productDescription;
   final String productImage;
   final String productQuantity;
+  final String pdfUrl;
+  final String pdfFileName;
+  final bool isFree;
   Timestamp? createdAt;
 
   ProductModel({
@@ -19,6 +22,9 @@ class ProductModel with ChangeNotifier {
     required this.productDescription,
     required this.productImage,
     required this.productQuantity,
+    this.pdfUrl = '',
+    this.pdfFileName = '',
+    this.isFree = false,
     this.createdAt,
   });
 
@@ -32,6 +38,9 @@ class ProductModel with ChangeNotifier {
       productDescription: data['productDescription'],
       productImage: data['productImage'],
       productQuantity: data['productQuantity'],
+      pdfUrl: (data['pdfUrl'] ?? '').toString(),
+      pdfFileName: (data['pdfFileName'] ?? '').toString(),
+      isFree: data['isFree'] == true,
       createdAt: data['createdAt'],
     );
   }

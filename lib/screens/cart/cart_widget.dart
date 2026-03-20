@@ -111,7 +111,7 @@ class CartWidget extends StatelessWidget {
                                 },
                                 icon: const Icon(IconlyLight.arrowDown2),
                                 label: Text(
-                                  "Qty: ${cartModel.quantity}",
+                                  "Kol: ${cartModel.quantity}",
                                 ),
                                 style: OutlinedButton.styleFrom(
                                   side: const BorderSide(width: 1),

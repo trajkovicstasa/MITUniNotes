@@ -10,6 +10,7 @@ import 'package:notes_hub/screens/auth/forgot_password.dart';
 import 'package:notes_hub/screens/auth/login.dart';
 import 'package:notes_hub/screens/auth/register.dart';
 import 'package:notes_hub/screens/inner_screen/orders/orders_screen.dart';
+import 'package:notes_hub/screens/inner_screen/pdf_preview_screen.dart';
 import 'package:notes_hub/screens/inner_screen/product_details.dart';
 import 'package:notes_hub/screens/inner_screen/viewed_recently.dart';
 import 'package:notes_hub/screens/inner_screen/wishlist.dart';
@@ -70,6 +71,8 @@ class MyApp extends StatelessWidget {
               RootScreen.routeName: (context) => const RootScreen(),
               ProductDetailsScreen.routName: (context) =>
                   const ProductDetailsScreen(),
+              PdfPreviewScreen.routeName: (context) =>
+                  const PdfPreviewScreen(),
               WishlistScreen.routName: (context) => const WishlistScreen(),
               ViewedRecentlyScreen.routName: (context) =>
                   const ViewedRecentlyScreen(),

@@ -8,7 +8,10 @@ class ProductModel with ChangeNotifier {
       productCategory,
       productDescription,
       productImage,
-      productQuantity;
+      productQuantity,
+      pdfUrl,
+      pdfFileName;
+  final bool isFree;
        Timestamp? createdAt;
   ProductModel(
       {required this.productId,
@@ -18,6 +21,9 @@ class ProductModel with ChangeNotifier {
       required this.productDescription,
       required this.productImage,
       required this.productQuantity,
+      this.pdfUrl = '',
+      this.pdfFileName = '',
+      this.isFree = false,
       this.createdAt});
 
   factory ProductModel.fromFirestore(DocumentSnapshot doc) {
@@ -31,6 +37,9 @@ class ProductModel with ChangeNotifier {
       productDescription: data['productDescription'],
       productImage: data['productImage'],
       productQuantity: data['productQuantity'],
+      pdfUrl: (data['pdfUrl'] ?? '').toString(),
+      pdfFileName: (data['pdfFileName'] ?? '').toString(),
+      isFree: data['isFree'] == true,
       createdAt: data['createdAt'],
     );
   }

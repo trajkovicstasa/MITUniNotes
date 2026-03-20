@@ -74,7 +74,7 @@ class AdminRoot extends StatelessWidget {
   const AdminRoot({super.key});
 
   static const items = [
-    AdminNavItem(label: 'Dashboard', icon: Icons.dashboard_outlined),
+    AdminNavItem(label: 'Kontrolna tabla', icon: Icons.dashboard_outlined),
     AdminNavItem(label: 'Skripte', icon: Icons.menu_book_outlined),
     AdminNavItem(label: 'Dodaj skriptu', icon: Icons.add_circle_outline_rounded),
     AdminNavItem(
@@ -95,7 +95,7 @@ class AdminRoot extends StatelessWidget {
   ];
 
   static const titles = [
-    'Dashboard',
+    'Kontrolna tabla',
     'Skripte',
     'Dodaj skriptu',
     'Kupovine',

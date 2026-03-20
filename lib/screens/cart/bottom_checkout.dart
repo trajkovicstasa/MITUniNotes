@@ -7,14 +7,15 @@ import 'package:notes_hub/widgets/title_text.dart';
 import 'package:provider/provider.dart';
 
 class CartBottomSheetWidget extends StatelessWidget {
-const CartBottomSheetWidget({super.key, required this.function});
+  const CartBottomSheetWidget({super.key, required this.function});
 
-final Future<void> Function() function;
+  final Future<void> Function() function;
 
   @override
   Widget build(BuildContext context) {
     final productsProvider = Provider.of<ProductsProvider>(context);
     final cartProvider = Provider.of<CartProvider>(context);
+
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
@@ -34,9 +35,11 @@ final Future<void> Function() function;
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     FittedBox(
-                        child: TitelesTextWidget(
-                            label:
-                                "Ukupno (${cartProvider.getCartitems.length} beleški/${cartProvider.getQty()} stavki)")),
+                      child: TitelesTextWidget(
+                        label:
+                            "Ukupno (${cartProvider.getCartitems.length} skripti/${cartProvider.getQty()} stavki)",
+                      ),
+                    ),
                     SubtitleTextWidget(
                       label:
                           "${cartProvider.getTotal(productsProvider: productsProvider).toStringAsFixed(2)} RSD",
@@ -46,7 +49,7 @@ final Future<void> Function() function;
                 ),
               ),
               ElevatedButton(
-                 onPressed: () async {
+                onPressed: () async {
                   await function();
                 },
                 child: const Text("Plati"),

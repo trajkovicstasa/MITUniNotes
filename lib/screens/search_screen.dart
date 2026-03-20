@@ -9,7 +9,7 @@ import 'package:notes_hub/widgets/uninotes_logo.dart';
 import 'package:provider/provider.dart';
 
 class SearchScreen extends StatefulWidget {
-  static const routName = "/SearchScreen";
+  static const routName = "/skripte";
   const SearchScreen({super.key});
 
   @override
@@ -70,7 +70,7 @@ class _SearchScreenState extends State<SearchScreen> {
             }
             if (snapshot.data == null) {
               return const Center(
-                child: SelectableText("No products has been added"),
+                child: SelectableText("Jos nema dodatih skripti"),
               );
             }
 
@@ -261,7 +261,7 @@ class _ListingHero extends StatelessWidget {
           const SizedBox(height: 8),
           const SubtitleTextWidget(
             label:
-                "Listing stranica za predmet ili kolekciju. Odavde korisnik bira konkretnu skriptu i prelazi na detalje.",
+                "Pregled svih skripti za izabrani predmet ili kolekciju. Odavde korisnik bira konkretnu skriptu i prelazi na detalje.",
             color: Colors.white70,
             maxLines: 3,
           ),
