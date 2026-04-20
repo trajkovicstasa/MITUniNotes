@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:notes_hub/consts/app_colors.dart';
+import 'package:notes_hub/services/admin_access_service.dart';
 import 'package:notes_hub/widgets/admin/admin_section_card.dart';
 import 'package:notes_hub/widgets/admin/admin_stat_card.dart';
 import 'package:notes_hub/widgets/subtitle_text.dart';
@@ -42,8 +43,7 @@ class AdminDashboardScreen extends StatelessWidget {
                     }).length;
                     final adminCount = userDocs.where((doc) {
                       final data = doc.data();
-                      return data['isAdmin'] == true ||
-                          (data['role'] ?? '').toString().toLowerCase() == 'admin';
+                      return AdminAccessService.isAdminFromUserMap(data);
                     }).length;
 
                     return SingleChildScrollView(

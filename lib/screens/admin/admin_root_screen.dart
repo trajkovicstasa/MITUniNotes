@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:notes_hub/models/admin_nav_item.dart';
@@ -7,6 +6,7 @@ import 'package:notes_hub/screens/admin/admin_purchases_screen.dart';
 import 'package:notes_hub/screens/admin/admin_reviews_screen.dart';
 import 'package:notes_hub/screens/admin/admin_scripts_screen.dart';
 import 'package:notes_hub/screens/admin/admin_users_screen.dart';
+import 'package:notes_hub/services/admin_access_service.dart';
 import 'package:notes_hub/widgets/admin/admin_shell.dart';
 
 class AdminRootScreen extends StatefulWidget {
@@ -57,20 +57,7 @@ class _AdminRootScreenState extends State<AdminRootScreen> {
   ];
 
   Future<bool> _isCurrentUserAdmin() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return false;
-    }
-
-    final userDoc =
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-    final data = userDoc.data();
-    if (data == null) {
-      return false;
-    }
-
-    return data['isAdmin'] == true ||
-        (data['role'] ?? '').toString().toLowerCase() == 'admin';
+    return AdminAccessService.isAdminUser(FirebaseAuth.instance.currentUser);
   }
 
   @override
@@ -92,7 +79,7 @@ class _AdminRootScreenState extends State<AdminRootScreen> {
               child: Padding(
                 padding: EdgeInsets.all(24),
                 child: Text(
-                  'Ovaj nalog nema admin pristup. Dodaj role: "admin" ili isAdmin: true u Firestore users dokument ako zelis admin ulaz.',
+                  'Ovaj nalog nema admin pristup. Dodaj isAdmin: true, role: "admin" ili napravi dokument u admins kolekciji sa UID-jem ili email-om korisnika.',
                   textAlign: TextAlign.center,
                 ),
               ),

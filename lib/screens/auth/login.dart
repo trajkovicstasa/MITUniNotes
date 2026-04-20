@@ -1,5 +1,4 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_iconly/flutter_iconly.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -8,6 +7,7 @@ import 'package:notes_hub/screens/auth/forgot_password.dart';
 import 'package:notes_hub/screens/auth/register.dart';
 import 'package:notes_hub/screens/admin/admin_root_screen.dart';
 import 'package:notes_hub/screens/root_screen.dart';
+import 'package:notes_hub/services/admin_access_service.dart';
 import 'package:notes_hub/services/my_app_functions.dart';
 import 'package:notes_hub/widgets/auth/google_btn.dart';
 import 'package:notes_hub/widgets/subtitle_text.dart';
@@ -23,6 +23,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool obscureText = true;
+  bool _isAdminMode = false;
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
   late final FocusNode _emailFocusNode;
@@ -74,20 +75,14 @@ class _LoginScreenState extends State<LoginScreen> {
               message: 'Admin nalog nije dostupan.',
             );
           }
-          final userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(currentUser.uid)
-              .get();
-          final data = userDoc.data();
-          final isAdmin = data != null &&
-              (data['isAdmin'] == true ||
-                  (data['role'] ?? '').toString().toLowerCase() == 'admin');
+          await AdminAccessService.ensureAdminAccessForAllowedEmail(currentUser);
+          final isAdmin = await AdminAccessService.isAdminUser(currentUser);
           if (!isAdmin) {
             await auth.signOut();
             throw FirebaseAuthException(
               code: 'insufficient-permission',
               message:
-                  'Ovaj nalog nema admin pristup. Dodaj role: admin ili isAdmin: true u users dokument.',
+                  'Ovaj nalog nema admin pristup. Dodaj email u admin_access_config.dart, ili postavi isAdmin: true, role: admin, ili admins dokument.',
             );
           }
         }
@@ -96,9 +91,9 @@ class _LoginScreenState extends State<LoginScreen> {
           textColor: Colors.white,
         );
         if (!mounted) return;
-        Navigator.pushReplacementNamed(
-          context,
+        Navigator.of(context).pushNamedAndRemoveUntil(
           requireAdmin ? AdminRootScreen.routeName : RootScreen.routeName,
+          (route) => false,
         );
       } on FirebaseException catch (error) {
         await MyAppFunctions.showErrorOrWarningDialog(
@@ -118,6 +113,31 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
+  }
+
+  Future<void> _submitCurrentLoginMode() async {
+    await _loginFct(requireAdmin: _isAdminMode);
+  }
+
+  void _toggleAdminMode() {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _isAdminMode = !_isAdminMode;
+    });
+    _formkey.currentState?.reset();
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            _isAdminMode
+                ? 'Admin login mode je ukljucen.'
+                : 'Vracen je obican korisnicki login mode.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
   }
 
   @override
@@ -156,6 +176,49 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Align(
                     alignment: Alignment.centerLeft,
                     child: TitelesTextWidget(label: "Welcome back!")),
+                const SizedBox(
+                  height: 16,
+                ),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _isAdminMode
+                        ? Colors.blue.withValues(alpha: 0.10)
+                        : Colors.grey.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: _isAdminMode
+                          ? Colors.blueAccent
+                          : Colors.grey.shade400,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _isAdminMode
+                            ? Icons.admin_panel_settings_rounded
+                            : Icons.person_outline_rounded,
+                        color: _isAdminMode ? Colors.blueAccent : Colors.grey[700],
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _isAdminMode
+                              ? 'Admin login mode je aktivan. Dugme ispod vodi u admin panel.'
+                              : 'Aktivan je obican korisnicki login.',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(
                   height: 16,
                 ),
@@ -211,7 +274,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         onFieldSubmitted: (value) async {
-                          await _loginFct();
+                          await _submitCurrentLoginMode();
                         },
                         validator: (value) {
                           return MyValidators.passwordValidator(value);
@@ -255,15 +318,26 @@ class _LoginScreenState extends State<LoginScreen> {
                                   height: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
+                                    color: Colors.white,
                                   ),
                                 )
-                              : const Icon(Icons.login),
-                          label: Text(_isLoading ? "Please wait..." : "Login"),
+                              : Icon(
+                                  _isAdminMode
+                                      ? Icons.admin_panel_settings_outlined
+                                      : Icons.login,
+                                ),
+                          label: Text(
+                            _isLoading
+                                ? "Please wait..."
+                                : _isAdminMode
+                                    ? "Continue as Admin"
+                                    : "Login",
+                          ),
                           onPressed: () async {
                             if (_isLoading) {
                               return;
                             }
-                            await _loginFct();
+                            await _submitCurrentLoginMode();
                           },
                         ),
                       ),
@@ -275,17 +349,28 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.all(12.0),
+                            backgroundColor: _isAdminMode
+                                ? Colors.blue.withValues(alpha: 0.08)
+                                : null,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12.0),
                             ),
                           ),
-                          icon: const Icon(Icons.admin_panel_settings_outlined),
-                          label: const Text("Login as Admin"),
-                          onPressed: () async {
+                          icon: Icon(
+                            _isAdminMode
+                                ? Icons.close_rounded
+                                : Icons.admin_panel_settings_outlined,
+                          ),
+                          label: Text(
+                            _isAdminMode
+                                ? "Exit Admin Mode"
+                                : "Login as Admin",
+                          ),
+                          onPressed: () {
                             if (_isLoading) {
                               return;
                             }
-                            await _loginFct(requireAdmin: true);
+                            _toggleAdminMode();
                           },
                         ),
                       ),

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:notes_hub/consts/app_colors.dart';
+import 'package:notes_hub/services/admin_access_service.dart';
 import 'package:notes_hub/widgets/admin/admin_section_card.dart';
 import 'package:notes_hub/widgets/subtitle_text.dart';
 import 'package:notes_hub/widgets/title_text.dart';
@@ -41,8 +42,7 @@ class AdminUsersScreen extends StatelessWidget {
                       final data = doc.data();
                       final userName = (data['userName'] ?? 'Korisnik').toString();
                       final userEmail = (data['userEmail'] ?? 'Bez mejla').toString();
-                      final role = data['isAdmin'] == true ||
-                              (data['role'] ?? '').toString().toLowerCase() == 'admin'
+                      final role = AdminAccessService.isAdminFromUserMap(data)
                           ? 'Admin'
                           : 'User';
 
