@@ -18,17 +18,28 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   late final TextEditingController searchTextController;
+  late final Stream<List<ProductModel>> _productsStream;
 
   @override
   void initState() {
-    searchTextController = TextEditingController();
     super.initState();
+    searchTextController = TextEditingController();
+    searchTextController.addListener(_onSearchChanged);
+    _productsStream =
+        Provider.of<ProductsProvider>(context, listen: false).fetchProductsStream();
   }
 
   @override
   void dispose() {
+    searchTextController.removeListener(_onSearchChanged);
     searchTextController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -60,7 +71,7 @@ class _SearchScreenState extends State<SearchScreen> {
           title: Text(pageTitle),
         ),
         body: StreamBuilder<List<ProductModel>>(
-          stream: productsProvider.fetchProductsStream(),
+          stream: _productsStream,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -126,9 +137,6 @@ class _SearchScreenState extends State<SearchScreen> {
                               const SizedBox(height: 14),
                               TextField(
                                 controller: searchTextController,
-                                onChanged: (_) {
-                                  setState(() {});
-                                },
                                 decoration: InputDecoration(
                                   hintText: "Naslov skripte, predmet ili oblast",
                                   prefixIcon: const Icon(Icons.search_rounded),
@@ -137,7 +145,6 @@ class _SearchScreenState extends State<SearchScreen> {
                                       : IconButton(
                                           onPressed: () {
                                             searchTextController.clear();
-                                            setState(() {});
                                           },
                                           icon: const Icon(
                                             Icons.close_rounded,
@@ -348,23 +355,7 @@ class _ListingNoteCard extends StatelessWidget {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          color: Color(0xFFF59E0B),
-                          size: 18,
-                        ),
-                        const SizedBox(width: 4),
-                        const SubtitleTextWidget(
-                          label: "4.8",
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        const SizedBox(width: 4),
-                        const SubtitleTextWidget(
-                          label: "(12)",
-                          fontSize: 14,
-                          color: AppColors.muted,
-                        ),
+                        _MetaPill(label: note.isFree ? "Besplatna" : "Premium"),
                         const Spacer(),
                         SubtitleTextWidget(
                           label: "${note.productPrice} RSD",

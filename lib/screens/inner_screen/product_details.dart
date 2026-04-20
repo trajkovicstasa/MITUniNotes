@@ -9,6 +9,7 @@ import 'package:notes_hub/consts/app_colors.dart';
 import 'package:notes_hub/models/product_model.dart';
 import 'package:notes_hub/providers/cart_provider.dart';
 import 'package:notes_hub/providers/products_provider.dart';
+import 'package:notes_hub/providers/user_provider.dart';
 import 'package:notes_hub/screens/inner_screen/pdf_preview_screen.dart';
 import 'package:notes_hub/services/my_app_functions.dart';
 import 'package:notes_hub/widgets/products/heart_btn.dart';
@@ -29,24 +30,27 @@ class ProductDetailsScreen extends StatefulWidget {
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   bool _isDownloading = false;
   double _downloadProgress = 0;
+  bool _isSubmittingReview = false;
 
-  Future<bool> _hasPurchasedAccess(ProductModel currentNote) async {
+  bool _hasPaidAccessFromOrdersSnapshot({
+    required QuerySnapshot<Map<String, dynamic>>? snapshot,
+    required ProductModel currentNote,
+  }) {
     if (currentNote.isFree) {
       return true;
     }
 
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      return false;
-    }
+    final orderDocs = snapshot?.docs ?? const [];
+    for (final doc in orderDocs) {
+      final data = doc.data();
+      final orderProductId = (data['productId'] ?? '').toString();
+      final paymentStatus = (data['paymentStatus'] ?? '').toString();
+      if (orderProductId != currentNote.productId) {
+        continue;
+      }
 
-    final ordersSnapshot = await FirebaseFirestore.instance
-        .collection('orders')
-        .where('userId', isEqualTo: user.uid)
-        .get();
-
-    for (final doc in ordersSnapshot.docs) {
-      if ((doc.data()['productId'] ?? '').toString() == currentNote.productId) {
+      // Keep legacy orders valid, but explicitly honor paid PayPal orders.
+      if (paymentStatus.isEmpty || paymentStatus == 'paid') {
         return true;
       }
     }
@@ -179,13 +183,213 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     }
   }
 
+  Future<void> _submitReview({
+    required ProductModel currentNote,
+    required String userName,
+    required int rating,
+    required String comment,
+    required String? existingReviewId,
+  }) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      await MyAppFunctions.showErrorOrWarningDialog(
+        context: context,
+        subtitle: 'Prvo se prijavi da bi ostavila ocenu i komentar.',
+        fct: () {},
+      );
+      return;
+    }
+
+    if (!currentNote.isFree) {
+      final ordersSnapshot = await FirebaseFirestore.instance
+          .collection('orders')
+          .where('userId', isEqualTo: currentUser.uid)
+          .get();
+      final hasPurchasedAccess = _hasPaidAccessFromOrdersSnapshot(
+        snapshot: ordersSnapshot,
+        currentNote: currentNote,
+      );
+      if (!hasPurchasedAccess) {
+        if (!mounted) {
+          return;
+        }
+        await MyAppFunctions.showErrorOrWarningDialog(
+          context: context,
+          subtitle:
+              'Ocenu za premium skriptu moze da ostavi samo korisnik koji ju je kupio.',
+          fct: () {},
+        );
+        return;
+      }
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    final trimmedComment = comment.trim();
+    if (trimmedComment.isEmpty) {
+      await MyAppFunctions.showErrorOrWarningDialog(
+        context: context,
+        subtitle: 'Komentar je obavezan.',
+        fct: () {},
+      );
+      return;
+    }
+
+    try {
+      setState(() {
+        _isSubmittingReview = true;
+      });
+
+      final reviewsDb = FirebaseFirestore.instance.collection('reviews');
+      if (existingReviewId != null && existingReviewId.isNotEmpty) {
+        await reviewsDb.doc(existingReviewId).update({
+          'rating': rating,
+          'comment': trimmedComment,
+          'userName': userName,
+          'updatedAt': Timestamp.now(),
+        });
+      } else {
+        final reviewDoc = reviewsDb.doc();
+        await reviewDoc.set({
+          'reviewId': reviewDoc.id,
+          'productId': currentNote.productId,
+          'userId': currentUser.uid,
+          'userName': userName,
+          'rating': rating,
+          'comment': trimmedComment,
+          'createdAt': Timestamp.now(),
+          'updatedAt': Timestamp.now(),
+        });
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      FocusScope.of(context).unfocus();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ocena i komentar su sacuvani.')),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      await MyAppFunctions.showErrorOrWarningDialog(
+        context: context,
+        subtitle: error.toString(),
+        fct: () {},
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmittingReview = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _deleteReview({
+    required String reviewId,
+  }) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      await MyAppFunctions.showErrorOrWarningDialog(
+        context: context,
+        subtitle: 'Prvo se prijavi da bi upravljala svojim komentarom.',
+        fct: () {},
+      );
+      return;
+    }
+
+    try {
+      setState(() {
+        _isSubmittingReview = true;
+      });
+
+      await FirebaseFirestore.instance.collection('reviews').doc(reviewId).delete();
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tvoja recenzija je obrisana.')),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      await MyAppFunctions.showErrorOrWarningDialog(
+        context: context,
+        subtitle: error.toString(),
+        fct: () {},
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmittingReview = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _reportReview({
+    required String reviewId,
+  }) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      await MyAppFunctions.showErrorOrWarningDialog(
+        context: context,
+        subtitle: 'Prijavi se da bi prijavila komentar.',
+        fct: () {},
+      );
+      return;
+    }
+
+    try {
+      await FirebaseFirestore.instance.collection('reviews').doc(reviewId).set({
+        'reported': true,
+        'reportedAt': Timestamp.now(),
+        'reportedBy': FieldValue.arrayUnion([currentUser.uid]),
+        'reportCount': FieldValue.increment(1),
+      }, SetOptions(merge: true));
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Komentar je prijavljen adminu.')),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      await MyAppFunctions.showErrorOrWarningDialog(
+        context: context,
+        subtitle: error.toString(),
+        fct: () {},
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final productsProvider = Provider.of<ProductsProvider>(context);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
     final productId = ModalRoute.of(context)!.settings.arguments as String?;
     final currentNote = productsProvider.findByProductId(productId!);
     final cartProvider = Provider.of<CartProvider>(context);
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final ordersStream = currentNote == null || currentNote.isFree || currentUser == null
+        ? null
+        : FirebaseFirestore.instance
+            .collection('orders')
+            .where('userId', isEqualTo: currentUser.uid)
+            .snapshots();
 
     return Scaffold(
       appBar: AppBar(
@@ -205,13 +409,24 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       ),
       body: currentNote == null
           ? const SizedBox.shrink()
-          : FutureBuilder<bool>(
-              future: _hasPurchasedAccess(currentNote),
+          : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: ordersStream,
               builder: (context, snapshot) {
-                final hasAccess = snapshot.data ?? currentNote.isFree;
+                final hasAccess = _hasPaidAccessFromOrdersSnapshot(
+                  snapshot: snapshot.data,
+                  currentNote: currentNote,
+                );
                 final isCheckingAccess =
-                    snapshot.connectionState == ConnectionState.waiting &&
-                        !currentNote.isFree;
+                    !currentNote.isFree &&
+                    currentUser != null &&
+                    snapshot.connectionState == ConnectionState.waiting;
+                final canReview = currentUser != null &&
+                    (currentNote.isFree || (!isCheckingAccess && hasAccess));
+                final reviewLockMessage = currentUser == null
+                    ? 'Prijavi se da bi ostavila ocenu i komentar.'
+                    : currentNote.isFree
+                        ? null
+                        : 'Ocenu za premium skriptu moze da ostavi samo korisnik koji ju je kupio.';
 
                 return SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -242,27 +457,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         maxLines: 3,
                       ),
                       const SizedBox(height: 10),
-                      const Row(
-                        children: [
-                          Icon(
-                            Icons.star_rounded,
-                            color: Color(0xFFF59E0B),
-                            size: 18,
-                          ),
-                          SizedBox(width: 4),
-                          SubtitleTextWidget(
-                            label: "4.8",
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          SizedBox(width: 4),
-                          SubtitleTextWidget(
-                            label: "(12 recenzija)",
-                            fontSize: 15,
-                            color: AppColors.muted,
-                          ),
-                        ],
-                      ),
+                      _ReviewHeader(productId: currentNote.productId),
                       const SizedBox(height: 18),
                       Container(
                         width: double.infinity,
@@ -443,30 +638,34 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         ),
                       ),
                       const SizedBox(height: 18),
-                      const _DetailsSection(
-                        title: "Ocene i komentari",
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _ReviewSummary(),
-                            SizedBox(height: 16),
-                            _CommentCard(
-                              userName: "Student PMF",
-                              rating: 5,
-                              comment:
-                                  "Jasno organizovana skripta, odlican pregled gradiva i korisni primeri.",
-                            ),
-                            SizedBox(height: 12),
-                            _CommentCard(
-                              userName: "Ana S.",
-                              rating: 4,
-                              comment:
-                                  "Dobar materijal za pripremu ispita. Kasnije ovde ubacujemo prave komentare iz baze.",
-                            ),
-                            SizedBox(height: 16),
-                            _LeaveReviewBox(),
-                          ],
-                        ),
+                      _ReviewsSection(
+                        productId: currentNote.productId,
+                        canReview: canReview,
+                        reviewLockMessage: reviewLockMessage,
+                        onReport: (reviewId) async {
+                          await _reportReview(reviewId: reviewId);
+                        },
+                        onDelete: (reviewId) async {
+                          await _deleteReview(reviewId: reviewId);
+                        },
+                        onSubmit:
+                            (rating, comment, existingReview, existingReviewId) async {
+                          final resolvedUserName = userProvider.getUserModel
+                                      ?.userName
+                                      .isNotEmpty ==
+                                  true
+                              ? userProvider.getUserModel!.userName
+                              : (currentUser?.email?.split('@').first ??
+                                  'Korisnik');
+                          await _submitReview(
+                            currentNote: currentNote,
+                            userName: resolvedUserName,
+                            rating: rating,
+                            comment: comment,
+                            existingReviewId: existingReviewId,
+                          );
+                        },
+                        isSubmitting: _isSubmittingReview,
                       ),
                     ],
                   ),
@@ -528,30 +727,6 @@ class _DocumentPreviewCard extends StatelessWidget {
               height: height,
               width: double.infinity,
               boxFit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.picture_as_pdf_rounded, color: AppColors.lightPrimary),
-                SizedBox(width: 10),
-                Expanded(
-                  child: SubtitleTextWidget(
-                    label:
-                        "Ovde ce kasnije ici preview prve strane ili thumbnail PDF dokumenta.",
-                    color: AppColors.muted,
-                    fontSize: 14,
-                    maxLines: 2,
-                  ),
-                ),
-              ],
             ),
           ),
         ],
@@ -683,8 +858,220 @@ class _BulletLine extends StatelessWidget {
   }
 }
 
+class _ReviewHeader extends StatelessWidget {
+  const _ReviewHeader({required this.productId});
+
+  final String productId;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('reviews')
+          .where('productId', isEqualTo: productId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final reviews = snapshot.data?.docs.map((doc) => doc.data()).toList() ?? [];
+        final reviewsCount = reviews.length;
+        final averageRating = reviewsCount == 0
+            ? 0.0
+            : reviews.fold<num>(
+                    0,
+                    (total, review) => total + ((review['rating'] ?? 0) as num),
+                  ) /
+                reviewsCount;
+
+        return Row(
+          children: [
+            const Icon(
+              Icons.star_rounded,
+              color: Color(0xFFF59E0B),
+              size: 18,
+            ),
+            const SizedBox(width: 4),
+            SubtitleTextWidget(
+              label: averageRating == 0
+                  ? 'Nema ocena'
+                  : averageRating.toStringAsFixed(1),
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+            const SizedBox(width: 4),
+            SubtitleTextWidget(
+              label: "($reviewsCount recenzija)",
+              fontSize: 15,
+              color: AppColors.muted,
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ReviewsSection extends StatefulWidget {
+  const _ReviewsSection({
+    required this.productId,
+    required this.canReview,
+    required this.reviewLockMessage,
+    required this.onReport,
+    required this.onDelete,
+    required this.onSubmit,
+    required this.isSubmitting,
+  });
+
+  final String productId;
+  final bool canReview;
+  final String? reviewLockMessage;
+  final Future<void> Function(String reviewId) onReport;
+  final Future<void> Function(String reviewId) onDelete;
+  final Future<void> Function(
+    int rating,
+    String comment,
+    bool existingReview,
+    String? existingReviewId,
+  ) onSubmit;
+  final bool isSubmitting;
+
+  @override
+  State<_ReviewsSection> createState() => _ReviewsSectionState();
+}
+
+class _ReviewsSectionState extends State<_ReviewsSection> {
+  final TextEditingController _reviewController = TextEditingController();
+  int _selectedRating = 5;
+
+  @override
+  void dispose() {
+    _reviewController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('reviews')
+          .where('productId', isEqualTo: widget.productId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final reviewDocs = snapshot.data?.docs ?? [];
+        final sortedReviewDocs = [...reviewDocs]..sort((a, b) {
+          final aTime =
+              (a.data()['updatedAt'] ?? a.data()['createdAt']) as Timestamp?;
+          final bTime =
+              (b.data()['updatedAt'] ?? b.data()['createdAt']) as Timestamp?;
+          return (bTime?.millisecondsSinceEpoch ?? 0)
+              .compareTo(aTime?.millisecondsSinceEpoch ?? 0);
+        });
+
+        final reviewsCount = sortedReviewDocs.length;
+        final averageRating = reviewsCount == 0
+            ? 0.0
+            : sortedReviewDocs.fold<num>(
+                    0,
+                    (total, doc) => total + ((doc.data()['rating'] ?? 0) as num),
+                  ) /
+                reviewsCount;
+
+        final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+        QueryDocumentSnapshot<Map<String, dynamic>>? currentUserReviewDoc;
+        if (currentUserId != null) {
+          for (final reviewDoc in sortedReviewDocs) {
+            if ((reviewDoc.data()['userId'] ?? '').toString() == currentUserId) {
+              currentUserReviewDoc = reviewDoc;
+              break;
+            }
+          }
+        }
+
+        if (currentUserReviewDoc != null && _reviewController.text.isEmpty) {
+          _reviewController.text =
+              (currentUserReviewDoc.data()['comment'] ?? '').toString();
+          _selectedRating =
+              ((currentUserReviewDoc.data()['rating'] ?? 5) as num).toInt();
+        } else if (currentUserReviewDoc == null && _reviewController.text.isNotEmpty) {
+          _reviewController.clear();
+          _selectedRating = 5;
+        }
+
+        return _DetailsSection(
+          title: "Ocene i komentari",
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _ReviewSummary(
+                averageRating: averageRating,
+                reviewsCount: reviewsCount,
+              ),
+              const SizedBox(height: 16),
+              if (sortedReviewDocs.isEmpty)
+                const _EmptyReviewsState()
+              else
+                ...sortedReviewDocs.map(
+                  (reviewDoc) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _CommentCard(
+                      reviewId: reviewDoc.id,
+                      canReport: currentUserId != null &&
+                          (reviewDoc.data()['userId'] ?? '').toString() != currentUserId,
+                      isReportedByCurrentUser: currentUserId != null &&
+                          (((reviewDoc.data()['reportedBy'] as List?) ?? const [])
+                              .map((item) => item.toString())
+                              .contains(currentUserId)),
+                      onReport: () async {
+                        await widget.onReport(reviewDoc.id);
+                      },
+                      userName:
+                          (reviewDoc.data()['userName'] ?? 'Korisnik').toString(),
+                      rating: ((reviewDoc.data()['rating'] ?? 0) as num).toInt(),
+                      comment: (reviewDoc.data()['comment'] ?? '').toString(),
+                    ),
+                  ),
+                ),
+              _LeaveReviewBox(
+                canReview: widget.canReview,
+                lockedMessage: widget.reviewLockMessage,
+                selectedRating: _selectedRating,
+                onRatingSelected: (rating) {
+                  setState(() {
+                    _selectedRating = rating;
+                  });
+                },
+                reviewController: _reviewController,
+                isSubmitting: widget.isSubmitting,
+                existingReview: currentUserReviewDoc != null,
+                onDelete: currentUserReviewDoc == null
+                    ? null
+                    : () async {
+                        final reviewId = currentUserReviewDoc!.id;
+                        await widget.onDelete(reviewId);
+                      },
+                onSubmit: () async {
+                  await widget.onSubmit(
+                    _selectedRating,
+                    _reviewController.text,
+                    currentUserReviewDoc != null,
+                    currentUserReviewDoc?.id,
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _ReviewSummary extends StatelessWidget {
-  const _ReviewSummary();
+  const _ReviewSummary({
+    required this.averageRating,
+    required this.reviewsCount,
+  });
+
+  final double averageRating;
+  final int reviewsCount;
 
   @override
   Widget build(BuildContext context) {
@@ -694,29 +1081,36 @@ class _ReviewSummary extends StatelessWidget {
         color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: BorderRadius.circular(18),
       ),
-      child: const Row(
+      child: Row(
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TitelesTextWidget(label: "4.8", fontSize: 30),
-              SizedBox(height: 4),
-              SubtitleTextWidget(
+              TitelesTextWidget(
+                label: averageRating == 0
+                    ? "-"
+                    : averageRating.toStringAsFixed(1),
+                fontSize: 30,
+              ),
+              const SizedBox(height: 4),
+              const SubtitleTextWidget(
                 label: "Prosecna ocena",
                 fontSize: 14,
                 color: AppColors.muted,
               ),
             ],
           ),
-          SizedBox(width: 20),
+          const SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _StarRow(),
-                SizedBox(height: 8),
+                _StarRow(rating: averageRating),
+                const SizedBox(height: 8),
                 SubtitleTextWidget(
-                  label: "12 korisnika je ostavilo ocenu za ovu skriptu.",
+                  label: reviewsCount == 0
+                      ? "Jos nema ostavljenih ocena za ovu skriptu."
+                      : "$reviewsCount korisnika je ostavilo ocenu za ovu skriptu.",
                   fontSize: 14,
                   color: AppColors.muted,
                   maxLines: 2,
@@ -731,29 +1125,44 @@ class _ReviewSummary extends StatelessWidget {
 }
 
 class _StarRow extends StatelessWidget {
-  const _StarRow();
+  const _StarRow({this.rating = 0});
+
+  final double rating;
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
-      children: [
-        Icon(Icons.star_rounded, color: Color(0xFFF59E0B)),
-        Icon(Icons.star_rounded, color: Color(0xFFF59E0B)),
-        Icon(Icons.star_rounded, color: Color(0xFFF59E0B)),
-        Icon(Icons.star_rounded, color: Color(0xFFF59E0B)),
-        Icon(Icons.star_half_rounded, color: Color(0xFFF59E0B)),
-      ],
+    return Row(
+      children: List.generate(5, (index) {
+        final starIndex = index + 1;
+        IconData icon;
+        if (rating >= starIndex) {
+          icon = Icons.star_rounded;
+        } else if (rating >= starIndex - 0.5) {
+          icon = Icons.star_half_rounded;
+        } else {
+          icon = Icons.star_outline_rounded;
+        }
+        return Icon(icon, color: const Color(0xFFF59E0B));
+      }),
     );
   }
 }
 
 class _CommentCard extends StatelessWidget {
   const _CommentCard({
+    required this.reviewId,
+    required this.canReport,
+    required this.isReportedByCurrentUser,
+    required this.onReport,
     required this.userName,
     required this.rating,
     required this.comment,
   });
 
+  final String reviewId;
+  final bool canReport;
+  final bool isReportedByCurrentUser;
+  final Future<void> Function() onReport;
   final String userName;
   final int rating;
   final String comment;
@@ -797,6 +1206,23 @@ class _CommentCard extends StatelessWidget {
             color: AppColors.muted,
             fontSize: 14,
           ),
+          if (canReport) ...[
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: isReportedByCurrentUser
+                    ? null
+                    : () async {
+                        await onReport();
+                      },
+                icon: const Icon(Icons.flag_outlined, size: 18),
+                label: Text(
+                  isReportedByCurrentUser ? 'Prijavljeno' : 'Prijavi',
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -804,7 +1230,27 @@ class _CommentCard extends StatelessWidget {
 }
 
 class _LeaveReviewBox extends StatelessWidget {
-  const _LeaveReviewBox();
+  const _LeaveReviewBox({
+    required this.canReview,
+    required this.lockedMessage,
+    required this.selectedRating,
+    required this.onRatingSelected,
+    required this.reviewController,
+    required this.isSubmitting,
+    required this.existingReview,
+    required this.onDelete,
+    required this.onSubmit,
+  });
+
+  final bool canReview;
+  final String? lockedMessage;
+  final int selectedRating;
+  final ValueChanged<int> onRatingSelected;
+  final TextEditingController reviewController;
+  final bool isSubmitting;
+  final bool existingReview;
+  final Future<void> Function()? onDelete;
+  final Future<void> Function() onSubmit;
 
   @override
   Widget build(BuildContext context) {
@@ -815,22 +1261,121 @@ class _LeaveReviewBox extends StatelessWidget {
         color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(18),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TitelesTextWidget(
-            label: "Ostavi ocenu i komentar",
+            label: existingReview
+                ? "Izmeni svoju ocenu i komentar"
+                : "Ostavi ocenu i komentar",
             fontSize: 17,
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           SubtitleTextWidget(
-            label:
-                "Kasnije ovde vezujemo prijavljenog korisnika, 5 zvezdica i komentar iz baze.",
+            label: existingReview
+                ? "Vec si ocenila skriptu. Novi unos menja prethodni komentar."
+                : (lockedMessage ??
+                    "Registrovani korisnik moze da ostavi jednu ocenu i komentar po skripti."),
             color: AppColors.muted,
             fontSize: 14,
             maxLines: 3,
           ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 4,
+            children: List.generate(
+              5,
+              (index) => IconButton(
+                onPressed: canReview
+                    ? () {
+                        onRatingSelected(index + 1);
+                      }
+                    : null,
+                icon: Icon(
+                  index < selectedRating
+                      ? Icons.star_rounded
+                      : Icons.star_outline_rounded,
+                  color: const Color(0xFFF59E0B),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: reviewController,
+            enabled: canReview && !isSubmitting,
+            minLines: 3,
+            maxLines: 5,
+            decoration: const InputDecoration(
+              hintText: "Napisite svoje utiske o skripti",
+              alignLabelWithHint: true,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              if (existingReview && onDelete != null) ...[
+                OutlinedButton.icon(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          await onDelete!();
+                        },
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  label: const Text("Obrisi"),
+                ),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: !canReview || isSubmitting
+                      ? null
+                      : () async {
+                          await onSubmit();
+                        },
+                  icon: isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.rate_review_outlined),
+                  label: Text(
+                    !canReview
+                        ? "Ocena nije dostupna"
+                        : isSubmitting
+                            ? "Cuvanje..."
+                            : existingReview
+                                ? "Sacuvaj izmene"
+                                : "Objavi komentar",
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _EmptyReviewsState extends StatelessWidget {
+  const _EmptyReviewsState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: const SubtitleTextWidget(
+        label: "Jos nema komentara. Budi prva koja ce ostaviti utisak o ovoj skripti.",
+        color: AppColors.muted,
+        fontSize: 14,
+        maxLines: 3,
       ),
     );
   }

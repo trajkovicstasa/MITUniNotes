@@ -9,9 +9,14 @@ import 'package:notes_hub/providers/wishlist_provider.dart';
 import 'package:notes_hub/screens/auth/forgot_password.dart';
 import 'package:notes_hub/screens/auth/login.dart';
 import 'package:notes_hub/screens/auth/register.dart';
+import 'package:notes_hub/screens/admin/admin_root_screen.dart';
+import 'package:notes_hub/screens/inner_screen/my_purchased_scripts_screen.dart';
+import 'package:notes_hub/screens/inner_screen/my_unlocked_scripts_screen.dart';
 import 'package:notes_hub/screens/inner_screen/orders/orders_screen.dart';
 import 'package:notes_hub/screens/inner_screen/pdf_preview_screen.dart';
 import 'package:notes_hub/screens/inner_screen/product_details.dart';
+import 'package:notes_hub/screens/inner_screen/my_submissions_screen.dart';
+import 'package:notes_hub/screens/inner_screen/submit_script_screen.dart';
 import 'package:notes_hub/screens/inner_screen/viewed_recently.dart';
 import 'package:notes_hub/screens/inner_screen/wishlist.dart';
 import 'package:notes_hub/screens/root_screen.dart';
@@ -78,7 +83,16 @@ class MyApp extends StatelessWidget {
                   const ViewedRecentlyScreen(),
               RegisterScreen.routName: (context) => const RegisterScreen(),
               LoginScreen.routeName: (context) => const LoginScreen(),
+              AdminRootScreen.routeName: (context) => const AdminRootScreen(),
               OrdersScreen.routeName: (context) => const OrdersScreen(),
+              MyPurchasedScriptsScreen.routeName: (context) =>
+                  const MyPurchasedScriptsScreen(),
+              MyUnlockedScriptsScreen.routeName: (context) =>
+                  const MyUnlockedScriptsScreen(),
+              MySubmissionsScreen.routeName: (context) =>
+                  const MySubmissionsScreen(),
+              SubmitScriptScreen.routeName: (context) =>
+                  const SubmitScriptScreen(),
               ForgotPasswordScreen.routeName: (context) =>
                   const ForgotPasswordScreen(),
               SearchScreen.routName: (context) => const SearchScreen(),

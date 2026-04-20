@@ -8,7 +8,11 @@ import 'package:notes_hub/models/user_model.dart';
 import 'package:notes_hub/providers/theme_provider.dart';
 import 'package:notes_hub/providers/user_provider.dart';
 import 'package:notes_hub/screens/auth/login.dart';
+import 'package:notes_hub/screens/inner_screen/my_purchased_scripts_screen.dart';
+import 'package:notes_hub/screens/inner_screen/my_unlocked_scripts_screen.dart';
+import 'package:notes_hub/screens/inner_screen/my_submissions_screen.dart';
 import 'package:notes_hub/screens/inner_screen/orders/orders_screen.dart';
+import 'package:notes_hub/screens/inner_screen/submit_script_screen.dart';
 import 'package:notes_hub/screens/inner_screen/viewed_recently.dart';
 import 'package:notes_hub/screens/inner_screen/wishlist.dart';
 import 'package:notes_hub/services/assets_manager.dart';
@@ -290,6 +294,108 @@ class _ProfileScreenState extends State<ProfileScreen>
                   const SizedBox(height: 10),
                   Visibility(
                     visible: user != null && userModel != null,
+                    child: ListTile(
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          MyUnlockedScriptsScreen.routeName,
+                        );
+                      },
+                      title: const SubtitleTextWidget(
+                        label: "Moje otkljucane skripte",
+                      ),
+                      subtitle: const SubtitleTextWidget(
+                        label:
+                            "Jedna biblioteka za free skripte i premium skripte koje si kupila.",
+                        color: AppColors.muted,
+                        fontSize: 13,
+                        maxLines: 2,
+                      ),
+                      leading: const Icon(
+                        Icons.lock_open_rounded,
+                        color: AppColors.lightPrimary,
+                      ),
+                      trailing: const Icon(IconlyLight.arrowRight2),
+                    ),
+                  ),
+                  Visibility(
+                    visible: user != null && userModel != null,
+                    child: ListTile(
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          SubmitScriptScreen.routeName,
+                        );
+                      },
+                      title: const SubtitleTextWidget(
+                        label: "Posalji novu skriptu",
+                      ),
+                      subtitle: const SubtitleTextWidget(
+                        label: "Skripta ide adminu na odobrenje pre objave.",
+                        color: AppColors.muted,
+                        fontSize: 13,
+                        maxLines: 2,
+                      ),
+                      leading: const Icon(
+                        Icons.upload_file_rounded,
+                        color: AppColors.lightPrimary,
+                      ),
+                      trailing: const Icon(IconlyLight.arrowRight2),
+                    ),
+                  ),
+                  Visibility(
+                    visible: user != null && userModel != null,
+                    child: ListTile(
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          MySubmissionsScreen.routeName,
+                        );
+                      },
+                      title: const SubtitleTextWidget(
+                        label: "Moje poslate skripte",
+                      ),
+                      subtitle: const SubtitleTextWidget(
+                        label: "Pregled statusa: na cekanju, odobrena ili odbijena.",
+                        color: AppColors.muted,
+                        fontSize: 13,
+                        maxLines: 2,
+                      ),
+                      leading: const Icon(
+                        Icons.library_books_outlined,
+                        color: AppColors.lightPrimary,
+                      ),
+                      trailing: const Icon(IconlyLight.arrowRight2),
+                    ),
+                  ),
+                  Visibility(
+                    visible: user != null && userModel != null,
+                    child: ListTile(
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          MyPurchasedScriptsScreen.routeName,
+                        );
+                      },
+                      title: const SubtitleTextWidget(
+                        label: "Moje kupljene skripte",
+                      ),
+                      subtitle: const SubtitleTextWidget(
+                        label:
+                            "Brz pristup svim skriptama koje su ti otkljucane kupovinom.",
+                        color: AppColors.muted,
+                        fontSize: 13,
+                        maxLines: 2,
+                      ),
+                      leading: const Icon(
+                        Icons.workspace_premium_outlined,
+                        color: AppColors.lightPrimary,
+                      ),
+                      trailing: const Icon(IconlyLight.arrowRight2),
+                    ),
+                  ),
+                  Visibility(
+                    visible: user != null && userModel != null,
                     child: CustomListTile(
                       imagePath: "${AssetsManager.imagePath}/bag/checkout.png",
                       text: "Moje kupovine",
@@ -317,11 +423,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                         ViewedRecentlyScreen.routName,
                       );
                     },
-                  ),
-                  CustomListTile(
-                    imagePath: "${AssetsManager.imagePath}/address.png",
-                    text: "Podaci o nalogu",
-                    function: () {},
                   ),
                   const SizedBox(height: 6),
                   const Divider(),

@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_iconly/flutter_iconly.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:notes_hub/consts/validator.dart';
 import 'package:notes_hub/screens/auth/forgot_password.dart';
 import 'package:notes_hub/screens/auth/register.dart';
+import 'package:notes_hub/screens/admin/admin_root_screen.dart';
 import 'package:notes_hub/screens/root_screen.dart';
 import 'package:notes_hub/services/my_app_functions.dart';
 import 'package:notes_hub/widgets/auth/google_btn.dart';
@@ -51,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _loginFct() async {
+  Future<void> _loginFct({bool requireAdmin = false}) async {
     final isValid = _formkey.currentState!.validate();
     FocusScope.of(context).unfocus();
     if (isValid) {
@@ -64,12 +66,40 @@ class _LoginScreenState extends State<LoginScreen> {
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
+        if (requireAdmin) {
+          final currentUser = auth.currentUser;
+          if (currentUser == null) {
+            throw FirebaseAuthException(
+              code: 'user-not-found',
+              message: 'Admin nalog nije dostupan.',
+            );
+          }
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUser.uid)
+              .get();
+          final data = userDoc.data();
+          final isAdmin = data != null &&
+              (data['isAdmin'] == true ||
+                  (data['role'] ?? '').toString().toLowerCase() == 'admin');
+          if (!isAdmin) {
+            await auth.signOut();
+            throw FirebaseAuthException(
+              code: 'insufficient-permission',
+              message:
+                  'Ovaj nalog nema admin pristup. Dodaj role: admin ili isAdmin: true u users dokument.',
+            );
+          }
+        }
         Fluttertoast.showToast(
-          msg: "Login Successful",
+          msg: requireAdmin ? "Admin login successful" : "Login Successful",
           textColor: Colors.white,
         );
         if (!mounted) return;
-        Navigator.pushReplacementNamed(context, RootScreen.routeName);
+        Navigator.pushReplacementNamed(
+          context,
+          requireAdmin ? AdminRootScreen.routeName : RootScreen.routeName,
+        );
       } on FirebaseException catch (error) {
         await MyAppFunctions.showErrorOrWarningDialog(
           context: context,
@@ -234,6 +264,28 @@ class _LoginScreenState extends State<LoginScreen> {
                               return;
                             }
                             await _loginFct();
+                          },
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 12.0,
+                      ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.all(12.0),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                          ),
+                          icon: const Icon(Icons.admin_panel_settings_outlined),
+                          label: const Text("Login as Admin"),
+                          onPressed: () async {
+                            if (_isLoading) {
+                              return;
+                            }
+                            await _loginFct(requireAdmin: true);
                           },
                         ),
                       ),

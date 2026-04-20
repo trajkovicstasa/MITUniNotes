@@ -10,9 +10,13 @@ class ProductModel with ChangeNotifier {
       productImage,
       productQuantity,
       pdfUrl,
-      pdfFileName;
+      pdfFileName,
+      status,
+      rejectionReason,
+      authorId,
+      authorName;
   final bool isFree;
-       Timestamp? createdAt;
+  Timestamp? createdAt;
   ProductModel(
       {required this.productId,
       required this.productTitle,
@@ -24,6 +28,10 @@ class ProductModel with ChangeNotifier {
       this.pdfUrl = '',
       this.pdfFileName = '',
       this.isFree = false,
+      this.status = 'approved',
+      this.rejectionReason = '',
+      this.authorId = '',
+      this.authorName = '',
       this.createdAt});
 
   factory ProductModel.fromFirestore(DocumentSnapshot doc) {
@@ -40,6 +48,10 @@ class ProductModel with ChangeNotifier {
       pdfUrl: (data['pdfUrl'] ?? '').toString(),
       pdfFileName: (data['pdfFileName'] ?? '').toString(),
       isFree: data['isFree'] == true,
+      status: (data['status'] ?? 'approved').toString(),
+      rejectionReason: (data['rejectionReason'] ?? '').toString(),
+      authorId: (data['authorId'] ?? '').toString(),
+      authorName: (data['authorName'] ?? '').toString(),
       createdAt: data['createdAt'],
     );
   }

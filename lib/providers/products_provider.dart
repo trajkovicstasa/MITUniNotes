@@ -38,6 +38,11 @@ class ProductsProvider with ChangeNotifier {
   }
 
   final productDb = FirebaseFirestore.instance.collection("products");
+
+  bool _isApprovedForClient(ProductModel product) {
+    return product.status == 'approved';
+  }
+
   Future<List<ProductModel>> fetchProducts() async {
     try {
       await productDb
@@ -46,7 +51,10 @@ class ProductsProvider with ChangeNotifier {
           .then((productSnapshot) {
         products.clear();
         for (var element in productSnapshot.docs) {
-          products.insert(0, ProductModel.fromFirestore(element));
+          final product = ProductModel.fromFirestore(element);
+          if (_isApprovedForClient(product)) {
+            products.insert(0, product);
+          }
         }
       });
       notifyListeners();
@@ -61,7 +69,10 @@ class ProductsProvider with ChangeNotifier {
       return productDb.snapshots().map((snapshot) {
         products.clear();
         for (var element in snapshot.docs) {
-          products.insert(0, ProductModel.fromFirestore(element));
+          final product = ProductModel.fromFirestore(element);
+          if (_isApprovedForClient(product)) {
+            products.insert(0, product);
+          }
         }
         return products;
       });

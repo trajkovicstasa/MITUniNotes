@@ -201,6 +201,9 @@ class _UploadScriptScreenState extends State<UploadScriptScreen> {
         'pdfUrl': productPdfUrl,
         'pdfFileName': _pickedPdfName ?? '',
         'isFree': _isFree,
+        'status': 'approved',
+        'authorId': 'admin',
+        'authorName': 'Admin',
         'createdAt': Timestamp.now(),
       });
 
@@ -299,6 +302,9 @@ class _UploadScriptScreenState extends State<UploadScriptScreen> {
         'pdfUrl': pdfToSave,
         'pdfFileName': _pickedPdfName ?? widget.productModel!.pdfFileName,
         'isFree': _isFree,
+        'status': widget.productModel!.status,
+        'authorId': widget.productModel!.authorId,
+        'authorName': widget.productModel!.authorName,
         'createdAt': widget.productModel!.createdAt,
       });
 

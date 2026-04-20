@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:uninotes_admin/consts/app_colors.dart';
 import 'package:uninotes_admin/models/product_model.dart';
@@ -17,6 +18,77 @@ class ScriptsScreen extends StatefulWidget {
 
 class _ScriptsScreenState extends State<ScriptsScreen> {
   late final TextEditingController searchTextController;
+
+  Future<String?> _askRejectionReason() async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Razlog odbijanja'),
+          content: TextField(
+            controller: controller,
+            minLines: 3,
+            maxLines: 5,
+            decoration: const InputDecoration(
+              hintText: 'Kratko objasni korisniku zasto skripta nije odobrena',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(null);
+              },
+              child: const Text('Odustani'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(controller.text.trim());
+              },
+              child: const Text('Sacuvaj'),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    return result;
+  }
+
+  Future<void> _updateStatus(
+    ProductModel product,
+    String newStatus, {
+    String rejectionReason = '',
+  }) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('products')
+          .doc(product.productId)
+          .update({
+        'status': newStatus,
+        'rejectionReason': newStatus == 'rejected' ? rejectionReason : '',
+      });
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            newStatus == 'approved'
+                ? 'Skripta je odobrena.'
+                : 'Skripta je odbijena.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -172,34 +244,96 @@ class _ScriptsScreenState extends State<ScriptsScreen> {
                                   maxLines: 1,
                                 ),
                                 const SizedBox(height: 6),
-                                AppSubtitleText(
-                                  label: product.productDescription,
-                                  maxLines: 2,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          IconButton(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => Scaffold(
-                                    body: SafeArea(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(24),
-                                        child: UploadScriptScreen(
-                                          productModel: product,
-                                        ),
+                                 AppSubtitleText(
+                                   label: product.productDescription,
+                                   maxLines: 2,
+                                 ),
+                                 const SizedBox(height: 8),
+                                 Wrap(
+                                   spacing: 8,
+                                   runSpacing: 8,
+                                   children: [
+                                     _StatusPill(status: product.status),
+                                     if (product.authorName.isNotEmpty)
+                                       AppSubtitleText(
+                                         label: 'Autor: ${product.authorName}',
+                                         color: AppColors.text,
+                                       ),
+                                   ],
+                                 ),
+                               ],
+                             ),
+                           ),
+                           const SizedBox(width: 10),
+                           Column(
+                             children: [
+                               IconButton(
+                                 onPressed: () {
+                                   Navigator.of(context).push(
+                                     MaterialPageRoute(
+                                       builder: (context) => Scaffold(
+                                         body: SafeArea(
+                                           child: Padding(
+                                             padding: const EdgeInsets.all(24),
+                                             child: UploadScriptScreen(
+                                               productModel: product,
+                                             ),
+                                           ),
+                                         ),
+                                       ),
+                                     ),
+                                   );
+                                 },
+                                 icon: const Icon(Icons.edit_outlined),
+                               ),
+                               if (product.status != 'approved')
+                                  IconButton(
+                                    onPressed: () async {
+                                      await _updateStatus(product, 'approved');
+                                    },
+                                    tooltip: 'Odobri',
+                                    icon: const Icon(
+                                     Icons.verified_rounded,
+                                     color: Colors.green,
+                                   ),
+                                 ),
+                               if (product.status != 'rejected')
+                                  IconButton(
+                                    onPressed: () async {
+                                      final reason = await _askRejectionReason();
+                                      if (!mounted || reason == null) {
+                                        return;
+                                      }
+                                      await _updateStatus(
+                                        product,
+                                        'rejected',
+                                        rejectionReason: reason,
+                                      );
+                                    },
+                                    tooltip: 'Odbij',
+                                    icon: const Icon(
+                                     Icons.cancel_outlined,
+                                     color: Colors.redAccent,
+                                    ),
+                                  ),
+                                if (product.status == 'rejected' &&
+                                    product.rejectionReason.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: ConstrainedBox(
+                                      constraints:
+                                          const BoxConstraints(maxWidth: 220),
+                                      child: AppSubtitleText(
+                                        label:
+                                            'Razlog: ${product.rejectionReason}',
+                                        maxLines: 3,
+                                        color: Colors.redAccent,
                                       ),
                                     ),
                                   ),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.edit_outlined),
-                          ),
-                        ],
+                              ],
+                            ),
+                         ],
                       ),
                     );
                   }),
@@ -208,6 +342,54 @@ class _ScriptsScreenState extends State<ScriptsScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolvedStatus = status.isEmpty ? 'approved' : status;
+    late final Color backgroundColor;
+    late final Color textColor;
+    late final String label;
+
+    switch (resolvedStatus) {
+      case 'pending':
+        backgroundColor = Colors.orange.withValues(alpha: 0.12);
+        textColor = Colors.orange.shade800;
+        label = 'Na cekanju';
+        break;
+      case 'rejected':
+        backgroundColor = Colors.red.withValues(alpha: 0.10);
+        textColor = Colors.red.shade700;
+        label = 'Odbijena';
+        break;
+      default:
+        backgroundColor = Colors.green.withValues(alpha: 0.12);
+        textColor = Colors.green.shade800;
+        label = 'Odobrena';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }

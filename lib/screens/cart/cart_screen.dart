@@ -6,6 +6,7 @@ import 'package:notes_hub/providers/products_provider.dart';
 import 'package:notes_hub/providers/user_provider.dart';
 import 'package:notes_hub/screens/cart/bottom_checkout.dart';
 import 'package:notes_hub/screens/cart/cart_widget.dart';
+import 'package:notes_hub/services/paypal_demo_service.dart';
 import 'package:notes_hub/services/assets_manager.dart';
 import 'package:notes_hub/services/my_app_functions.dart';
 import 'package:notes_hub/widgets/empty_bag.dart';
@@ -123,6 +124,33 @@ class _CartScreenState extends State<CartScreen> {
         _isLoading = true;
       });
 
+      final checkoutResult = await PayPalDemoService.startCheckout(
+        context: context,
+        cartProvider: cartProvider,
+        productsProvider: productProvider,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (checkoutResult.status == PayPalCheckoutStatus.cancelled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PayPal placanje je otkazano.')),
+        );
+        return;
+      }
+
+      if (!checkoutResult.isSuccess) {
+        await MyAppFunctions.showErrorOrWarningDialog(
+          context: context,
+          subtitle: checkoutResult.errorMessage ??
+              'PayPal checkout nije uspesno zavrsen.',
+          fct: () {},
+        );
+        return;
+      }
+
       for (final value in cartProvider.getCartitems.values) {
         final getCurrProduct = productProvider.findByProductId(value.productId);
         final orderId = const Uuid().v4();
@@ -139,11 +167,21 @@ class _CartScreenState extends State<CartScreen> {
           'imageUrl': getCurrProduct.productImage,
           'userName': userProvider.getUserModel!.userName,
           'orderDate': Timestamp.now(),
+          'paymentProvider': 'paypal',
+          'paymentStatus': 'paid',
+          'currency': 'EUR',
+          'paypalPayload': checkoutResult.payload ?? <String, dynamic>{},
         });
       }
 
       await cartProvider.clearCartFromFirebase();
       cartProvider.clearLocalCart();
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('PayPal uplata je uspesna. Skripte su otkljucane.')),
+      );
     } catch (e) {
       if (!mounted) {
         return;

@@ -1,21 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:uninotes_admin/consts/app_colors.dart';
-import 'package:uninotes_admin/models/product_model.dart';
-import 'package:uninotes_admin/providers/products_provider.dart';
-import 'package:uninotes_admin/widgets/app_subtitle_text.dart';
-import 'package:uninotes_admin/widgets/app_title_text.dart';
-import 'package:uninotes_admin/widgets/section_card.dart';
+import 'package:notes_hub/consts/app_colors.dart';
+import 'package:notes_hub/models/product_model.dart';
+import 'package:notes_hub/widgets/admin/admin_section_card.dart';
+import 'package:notes_hub/widgets/subtitle_text.dart';
+import 'package:notes_hub/widgets/title_text.dart';
 
-class ReviewsScreen extends StatefulWidget {
-  const ReviewsScreen({super.key});
+class AdminReviewsScreen extends StatefulWidget {
+  const AdminReviewsScreen({super.key});
 
   @override
-  State<ReviewsScreen> createState() => _ReviewsScreenState();
+  State<AdminReviewsScreen> createState() => _AdminReviewsScreenState();
 }
 
-class _ReviewsScreenState extends State<ReviewsScreen> {
+class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
   late final TextEditingController _searchController;
   bool _showOnlyReported = false;
 
@@ -39,9 +37,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     }
   }
 
-  Future<void> _deleteReview({
-    required String reviewId,
-  }) async {
+  Future<void> _deleteReview({required String reviewId}) async {
     final shouldDelete = await showDialog<bool>(
           context: context,
           builder: (context) {
@@ -93,11 +89,8 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final productsProvider =
-        Provider.of<ProductsProvider>(context, listen: false);
-
-    return StreamBuilder<List<ProductModel>>(
-      stream: productsProvider.fetchProductsStream(),
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance.collection('products').snapshots(),
       builder: (context, productsSnapshot) {
         if (productsSnapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -106,7 +99,10 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
           return Center(child: SelectableText(productsSnapshot.error.toString()));
         }
 
-        final products = productsSnapshot.data ?? const <ProductModel>[];
+        final products = productsSnapshot.data?.docs
+                .map((doc) => ProductModel.fromFirestore(doc))
+                .toList() ??
+            const <ProductModel>[];
         final productsById = {
           for (final product in products) product.productId: product,
         };
@@ -121,12 +117,10 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
               return const Center(child: CircularProgressIndicator());
             }
             if (reviewsSnapshot.hasError) {
-              return Center(
-                child: SelectableText(reviewsSnapshot.error.toString()),
-              );
+              return Center(child: SelectableText(reviewsSnapshot.error.toString()));
             }
 
-            final reviewDocs = reviewsSnapshot.data?.docs ?? [];
+            final reviewDocs = reviewsSnapshot.data?.docs ?? const [];
             final query = _searchController.text.trim().toLowerCase();
             final visibleReviews = reviewDocs.where((reviewDoc) {
               final data = reviewDoc.data();
@@ -151,10 +145,9 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
             }).toList();
 
             return SingleChildScrollView(
-              child: SectionCard(
+              child: AdminSectionCard(
                 title: 'Recenzije',
-                subtitle:
-                    'Pregled svih korisnickih ocena i komentara sa mogucnoscu moderacije.',
+                subtitle: 'Pregled svih korisnickih ocena i komentara sa mogucnoscu moderacije.',
                 child: Column(
                   children: [
                     TextField(
@@ -199,9 +192,9 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                     const SizedBox(height: 18),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: AppSubtitleText(
+                      child: SubtitleTextWidget(
                         label: '${visibleReviews.length} recenzija za prikaz',
-                        color: AppColors.text,
+                        color: AppColors.textDark,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -213,9 +206,9 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                           color: Theme.of(context).scaffoldBackgroundColor,
                           borderRadius: BorderRadius.circular(18),
                         ),
-                        child: const AppSubtitleText(
+                        child: const SubtitleTextWidget(
                           label: 'Nema recenzija koje odgovaraju pretrazi.',
-                          color: AppColors.text,
+                          color: AppColors.textDark,
                         ),
                       )
                     else
@@ -251,19 +244,18 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        AppTitleText(
+                                        TitelesTextWidget(
                                           label: productTitle,
                                           fontSize: 17,
                                         ),
                                         const SizedBox(height: 4),
-                                        AppSubtitleText(
-                                          label:
-                                              'Korisnik: $userName | Ocena: $rating/5',
+                                        SubtitleTextWidget(
+                                          label: 'Korisnik: $userName | Ocena: $rating/5',
                                           maxLines: 1,
-                                          color: AppColors.text,
+                                          color: AppColors.textDark,
                                         ),
                                         const SizedBox(height: 4),
-                                        AppSubtitleText(
+                                        SubtitleTextWidget(
                                           label:
                                               'Azurirano: ${_formatTimestamp(updatedAt)}',
                                           maxLines: 1,
@@ -312,11 +304,9 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                                   color: Theme.of(context).cardColor,
                                   borderRadius: BorderRadius.circular(14),
                                 ),
-                                child: AppSubtitleText(
-                                  label: comment.isEmpty
-                                      ? 'Komentar nije ostavljen.'
-                                      : comment,
-                                  color: AppColors.text,
+                                child: SubtitleTextWidget(
+                                  label: comment.isEmpty ? 'Komentar nije ostavljen.' : comment,
+                                  color: AppColors.textDark,
                                   maxLines: 8,
                                 ),
                               ),

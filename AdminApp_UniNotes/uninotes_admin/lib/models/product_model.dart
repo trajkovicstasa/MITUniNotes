@@ -11,6 +11,10 @@ class ProductModel with ChangeNotifier {
   final String productQuantity;
   final String pdfUrl;
   final String pdfFileName;
+  final String status;
+  final String rejectionReason;
+  final String authorId;
+  final String authorName;
   final bool isFree;
   Timestamp? createdAt;
 
@@ -25,6 +29,10 @@ class ProductModel with ChangeNotifier {
     this.pdfUrl = '',
     this.pdfFileName = '',
     this.isFree = false,
+    this.status = 'approved',
+    this.rejectionReason = '',
+    this.authorId = '',
+    this.authorName = '',
     this.createdAt,
   });
 
@@ -41,6 +49,10 @@ class ProductModel with ChangeNotifier {
       pdfUrl: (data['pdfUrl'] ?? '').toString(),
       pdfFileName: (data['pdfFileName'] ?? '').toString(),
       isFree: data['isFree'] == true,
+      status: (data['status'] ?? 'approved').toString(),
+      rejectionReason: (data['rejectionReason'] ?? '').toString(),
+      authorId: (data['authorId'] ?? '').toString(),
+      authorName: (data['authorName'] ?? '').toString(),
       createdAt: data['createdAt'],
     );
   }

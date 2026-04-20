@@ -52,7 +52,7 @@ class CartBottomSheetWidget extends StatelessWidget {
                 onPressed: () async {
                   await function();
                 },
-                child: const Text("Plati"),
+                child: const Text("Plati PayPal-om"),
               ),
             ],
           ),
