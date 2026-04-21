@@ -10,31 +10,39 @@ class OrderProvider with ChangeNotifier {
   Future<List<OrdersModel>> fetchOrder() async {
     final auth = FirebaseAuth.instance;
     User? user = auth.currentUser;
-    var uid = user!.uid;
+    if (user == null) {
+      orders.clear();
+      notifyListeners();
+      return orders;
+    }
+    var uid = user.uid;
     try {
       await FirebaseFirestore.instance
           .collection("orders")
           .where('userId', isEqualTo: uid)
-          .orderBy("orderDate", descending: false)
           .get()
           .then((orderSnapshot) {
         orders.clear();
         for (var element in orderSnapshot.docs) {
+          final data = element.data();
           orders.insert(
             0,
             OrdersModel(
-              orderId: element.get('orderId'),
-              productId: element.get('productId'),
-              userId: element.get('userId'),
-              price: element.get('price').toString(),
-              productTitle: element.get('productTitle').toString(),
-              quantity: element.get('quantity').toString(),
-              imageUrl: element.get('imageUrl'),
-              userName: element.get('userName'),
-              orderDate: element.get('orderDate'),
+              orderId: (data['orderId'] ?? element.id).toString(),
+              productId: (data['productId'] ?? '').toString(),
+              userId: (data['userId'] ?? '').toString(),
+              price: (data['price'] ?? '0').toString(),
+              productTitle: (data['productTitle'] ?? '').toString(),
+              quantity: (data['quantity'] ?? '0').toString(),
+              imageUrl: (data['imageUrl'] ?? '').toString(),
+              userName: (data['userName'] ?? '').toString(),
+              orderDate: data['orderDate'] is Timestamp
+                  ? data['orderDate'] as Timestamp
+                  : Timestamp.now(),
             ),
           );
         }
+        orders.sort((a, b) => b.orderDate.compareTo(a.orderDate));
       });
       return orders;
     } catch (e) {

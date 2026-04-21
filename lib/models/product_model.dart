@@ -35,16 +35,15 @@ class ProductModel with ChangeNotifier {
       this.createdAt});
 
   factory ProductModel.fromFirestore(DocumentSnapshot doc) {
-    Map data = doc.data() as Map<String, dynamic>;
-    // data.containsKey("")
+    final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
     return ProductModel(
-      productId: data["productId"], //doc.get(field),
-      productTitle: data['productTitle'],
-      productPrice: data['productPrice'],
-      productCategory: data['productCategory'],
-      productDescription: data['productDescription'],
-      productImage: data['productImage'],
-      productQuantity: data['productQuantity'],
+      productId: (data["productId"] ?? doc.id).toString(),
+      productTitle: (data['productTitle'] ?? '').toString(),
+      productPrice: (data['productPrice'] ?? '0').toString(),
+      productCategory: (data['productCategory'] ?? '').toString(),
+      productDescription: (data['productDescription'] ?? '').toString(),
+      productImage: (data['productImage'] ?? '').toString(),
+      productQuantity: (data['productQuantity'] ?? '0').toString(),
       pdfUrl: (data['pdfUrl'] ?? '').toString(),
       pdfFileName: (data['pdfFileName'] ?? '').toString(),
       isFree: data['isFree'] == true,
@@ -52,7 +51,7 @@ class ProductModel with ChangeNotifier {
       rejectionReason: (data['rejectionReason'] ?? '').toString(),
       authorId: (data['authorId'] ?? '').toString(),
       authorName: (data['authorName'] ?? '').toString(),
-      createdAt: data['createdAt'],
+      createdAt: data['createdAt'] is Timestamp ? data['createdAt'] as Timestamp : null,
     );
   }
 }

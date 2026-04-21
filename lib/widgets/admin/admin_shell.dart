@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:notes_hub/consts/app_colors.dart';
 import 'package:notes_hub/models/admin_nav_item.dart';
+import 'package:notes_hub/providers/theme_provider.dart';
+import 'package:notes_hub/screens/auth/login.dart';
+import 'package:notes_hub/services/my_app_functions.dart';
 import 'package:notes_hub/widgets/subtitle_text.dart';
 import 'package:notes_hub/widgets/title_text.dart';
 import 'package:notes_hub/widgets/uninotes_logo.dart';
+import 'package:provider/provider.dart';
 
 class AdminShell extends StatelessWidget {
   const AdminShell({
@@ -64,7 +69,36 @@ class AdminShell extends StatelessWidget {
                         ),
                       ),
                     if (!isWide) const SizedBox(height: 18),
-                    TitelesTextWidget(label: title, fontSize: 30),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: TitelesTextWidget(label: title, fontSize: 30),
+                        ),
+                        const SizedBox(width: 12),
+                        OutlinedButton.icon(
+                          onPressed: () async {
+                            await MyAppFunctions.showErrorOrWarningDialog(
+                              context: context,
+                              subtitle: 'Da li sigurno zelis da se odjavis sa admin naloga?',
+                              isError: false,
+                              fct: () async {
+                                await FirebaseAuth.instance.signOut();
+                                if (!context.mounted) {
+                                  return;
+                                }
+                                Navigator.of(context).pushNamedAndRemoveUntil(
+                                  LoginScreen.routeName,
+                                  (route) => false,
+                                );
+                              },
+                            );
+                          },
+                          icon: const Icon(Icons.logout_rounded),
+                          label: const Text('Odjava'),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 6),
                     SubtitleTextWidget(label: subtitle, maxLines: 3),
                     const SizedBox(height: 24),
@@ -93,6 +127,9 @@ class _AdminSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkTheme = themeProvider.getIsDarkTheme;
+
     return Container(
       color: Theme.of(context).cardColor,
       child: SafeArea(
@@ -161,13 +198,16 @@ class _AdminSidebar extends StatelessWidget {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: SubtitleTextWidget(
-                                    label: item.label,
-                                    color: isSelected
-                                        ? AppColors.lightPrimary
-                                        : AppColors.textDark,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w700
-                                        : FontWeight.w600,
+                                     label: item.label,
+                                     color: isSelected
+                                         ? AppColors.lightPrimary
+                                         : Theme.of(context)
+                                             .textTheme
+                                             .bodyLarge
+                                             ?.color,
+                                     fontWeight: isSelected
+                                         ? FontWeight.w700
+                                         : FontWeight.w600,
                                   ),
                                 ),
                               ],
@@ -178,17 +218,33 @@ class _AdminSidebar extends StatelessWidget {
                     );
                   }),
                   const SizedBox(height: 20),
+                  const SubtitleTextWidget(
+                    label: 'Podesavanja',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.muted,
+                  ),
+                  const SizedBox(height: 12),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Theme.of(context).scaffoldBackgroundColor,
                       borderRadius: BorderRadius.circular(18),
                     ),
-                    child: const SubtitleTextWidget(
-                      label:
-                          'Admin deo je sada unutar glavne aplikacije i koristi iste Firestore podatke kao klijentski deo.',
-                      maxLines: 4,
+                    child: SwitchListTile(
+                      secondary: Icon(
+                        isDarkTheme
+                            ? Icons.dark_mode_rounded
+                            : Icons.light_mode_rounded,
+                        color: AppColors.lightPrimary,
+                      ),
+                      title: Text(
+                        isDarkTheme ? 'Tamna tema' : 'Svetla tema',
+                      ),
+                      value: isDarkTheme,
+                      onChanged: (value) {
+                        themeProvider.setDarkTheme(themeValue: value);
+                      },
                     ),
                   ),
                 ],

@@ -51,9 +51,13 @@ class ProductsProvider with ChangeNotifier {
           .then((productSnapshot) {
         products.clear();
         for (var element in productSnapshot.docs) {
-          final product = ProductModel.fromFirestore(element);
-          if (_isApprovedForClient(product)) {
-            products.insert(0, product);
+          try {
+            final product = ProductModel.fromFirestore(element);
+            if (_isApprovedForClient(product)) {
+              products.insert(0, product);
+            }
+          } catch (_) {
+            // Skip malformed product docs so one bad entry does not break screens.
           }
         }
       });
@@ -69,9 +73,13 @@ class ProductsProvider with ChangeNotifier {
       return productDb.snapshots().map((snapshot) {
         products.clear();
         for (var element in snapshot.docs) {
-          final product = ProductModel.fromFirestore(element);
-          if (_isApprovedForClient(product)) {
-            products.insert(0, product);
+          try {
+            final product = ProductModel.fromFirestore(element);
+            if (_isApprovedForClient(product)) {
+              products.insert(0, product);
+            }
+          } catch (_) {
+            // Skip malformed product docs so one bad entry does not break screens.
           }
         }
         return products;

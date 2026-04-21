@@ -40,6 +40,14 @@ class _ProfileScreenState extends State<ProfileScreen>
   UserModel? userModel;
   bool _isUpdatingImage = false;
 
+  Future<void> _openProfilePage(Widget page) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => page,
+      ),
+    );
+  }
+
   Future<void> fetchUserInfo() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     try {
@@ -292,15 +300,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                   const SizedBox(height: 10),
                   const TitelesTextWidget(label: "Pregled"),
                   const SizedBox(height: 10),
-                  Visibility(
-                    visible: user != null && userModel != null,
-                    child: ListTile(
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          MyUnlockedScriptsScreen.routeName,
-                        );
-                      },
+                   Visibility(
+                     visible: user != null && userModel != null,
+                     child: ListTile(
+                       onTap: () {
+                         _openProfilePage(const MyUnlockedScriptsScreen());
+                       },
                       title: const SubtitleTextWidget(
                         label: "Moje otkljucane skripte",
                       ),
@@ -318,15 +323,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                       trailing: const Icon(IconlyLight.arrowRight2),
                     ),
                   ),
-                  Visibility(
-                    visible: user != null && userModel != null,
-                    child: ListTile(
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          SubmitScriptScreen.routeName,
-                        );
-                      },
+                   Visibility(
+                     visible: user != null && userModel != null,
+                     child: ListTile(
+                       onTap: () {
+                         _openProfilePage(const SubmitScriptScreen());
+                       },
                       title: const SubtitleTextWidget(
                         label: "Posalji novu skriptu",
                       ),
@@ -343,15 +345,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                       trailing: const Icon(IconlyLight.arrowRight2),
                     ),
                   ),
-                  Visibility(
-                    visible: user != null && userModel != null,
-                    child: ListTile(
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          MySubmissionsScreen.routeName,
-                        );
-                      },
+                   Visibility(
+                     visible: user != null && userModel != null,
+                     child: ListTile(
+                       onTap: () {
+                         _openProfilePage(const MySubmissionsScreen());
+                       },
                       title: const SubtitleTextWidget(
                         label: "Moje poslate skripte",
                       ),
@@ -368,15 +367,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                       trailing: const Icon(IconlyLight.arrowRight2),
                     ),
                   ),
-                  Visibility(
-                    visible: user != null && userModel != null,
-                    child: ListTile(
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          MyPurchasedScriptsScreen.routeName,
-                        );
-                      },
+                   Visibility(
+                     visible: user != null && userModel != null,
+                     child: ListTile(
+                       onTap: () {
+                         _openProfilePage(const MyPurchasedScriptsScreen());
+                       },
                       title: const SubtitleTextWidget(
                         label: "Moje kupljene skripte",
                       ),
@@ -398,9 +394,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                     visible: user != null && userModel != null,
                     child: CustomListTile(
                       imagePath: "${AssetsManager.imagePath}/bag/checkout.png",
-                      text: "Moje kupovine",
-                      function: () {
-                        Navigator.pushNamed(context, OrdersScreen.routeName);
+                     text: "Moje kupovine",
+                     function: () {
+                        _openProfilePage(const OrdersScreen());
                       },
                     ),
                   ),
@@ -408,9 +404,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                     visible: user != null && userModel != null,
                     child: CustomListTile(
                       imagePath: "${AssetsManager.imagePath}/bag/wishlist.png",
-                      text: "Sacuvane beleske",
-                      function: () {
-                        Navigator.pushNamed(context, WishlistScreen.routName);
+                     text: "Sacuvane beleske",
+                     function: () {
+                        _openProfilePage(const WishlistScreen());
                       },
                     ),
                   ),
@@ -418,10 +414,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     imagePath: "${AssetsManager.imagePath}/profile/repeat.png",
                     text: "Nedavno pregledano",
                     function: () {
-                      Navigator.pushNamed(
-                        context,
-                        ViewedRecentlyScreen.routName,
-                      );
+                      _openProfilePage(const ViewedRecentlyScreen());
                     },
                   ),
                   const SizedBox(height: 6),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:notes_hub/widgets/subtitle_text.dart';
-import 'package:notes_hub/widgets/title_text.dart';
 
 class AdminSectionCard extends StatelessWidget {
   const AdminSectionCard({
@@ -22,9 +21,16 @@ class AdminSectionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TitelesTextWidget(label: title, fontSize: 20),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 6),
-            SubtitleTextWidget(label: subtitle, maxLines: 3),
+            const SizedBox(height: 6),
+            SubtitleTextWidget(label: subtitle),
             const SizedBox(height: 18),
             child,
           ],

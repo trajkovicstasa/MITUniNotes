@@ -46,6 +46,13 @@ class AdminDashboardScreen extends StatelessWidget {
                       return AdminAccessService.isAdminFromUserMap(data);
                     }).length;
 
+                    final approvedCount = productDocs.where((doc) {
+                      return (doc.data()['status'] ?? '').toString() == 'approved';
+                    }).length;
+                    final paypalCount = orderDocs.where((doc) {
+                      return (doc.data()['paymentProvider'] ?? '').toString() == 'paypal';
+                    }).length;
+
                     return SingleChildScrollView(
                       child: Column(
                         children: [
@@ -94,54 +101,59 @@ class AdminDashboardScreen extends StatelessWidget {
                             },
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: AdminSectionCard(
-                                  title: 'Prioritetne stavke',
-                                  subtitle: 'Sažet pregled onoga što trenutno traži pažnju.',
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      _ActionLine(
-                                        '${pendingCount.toString()} skripti čeka odobrenje',
-                                      ),
-                                      const SizedBox(height: 10),
-                                      _ActionLine(
-                                        '${reportedReviews.toString()} prijavljenih recenzija za proveru',
-                                      ),
-                                      const SizedBox(height: 10),
-                                      _ActionLine(
-                                        '${adminCount.toString()} admin naloga evidentirano u sistemu',
-                                      ),
-                                    ],
-                                  ),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final isCompact = constraints.maxWidth < 760;
+
+                              final priorityCard = AdminSectionCard(
+                                title: 'Prioritetne stavke',
+                                subtitle: 'Sazet pregled onoga sto trenutno trazi paznju.',
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _ActionLine('$pendingCount skripti ceka odobrenje'),
+                                    const SizedBox(height: 10),
+                                    _ActionLine('$reportedReviews prijavljenih recenzija za proveru'),
+                                    const SizedBox(height: 10),
+                                    _ActionLine('$adminCount admin naloga evidentirano u sistemu'),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: AdminSectionCard(
-                                  title: 'Stanje sistema',
-                                  subtitle: 'Brz pregled podataka vezanih za sadržaj i promet.',
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      _ActionLine(
-                                        '${productDocs.where((doc) => (doc.data()['status'] ?? '').toString() == 'approved').length} odobrenih skripti je vidljivo korisnicima',
-                                      ),
-                                      const SizedBox(height: 10),
-                                      _ActionLine(
-                                        '${orderDocs.where((doc) => (doc.data()['paymentProvider'] ?? '').toString() == 'paypal').length} kupovina je prošlo kroz PayPal tok',
-                                      ),
-                                      const SizedBox(height: 10),
-                                      _ActionLine(
-                                        '${reviewDocs.length} ukupno recenzija postoji u bazi',
-                                      ),
-                                    ],
-                                  ),
+                              );
+
+                              final systemCard = AdminSectionCard(
+                                title: 'Stanje sistema',
+                                subtitle: 'Brz pregled podataka vezanih za sadrzaj i promet.',
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _ActionLine('$approvedCount odobrenih skripti je vidljivo korisnicima'),
+                                    const SizedBox(height: 10),
+                                    _ActionLine('$paypalCount kupovina je proslo kroz PayPal tok'),
+                                    const SizedBox(height: 10),
+                                    _ActionLine('${reviewDocs.length} ukupno recenzija postoji u bazi'),
+                                  ],
                                 ),
-                              ),
-                            ],
+                              );
+
+                              if (isCompact) {
+                                return Column(
+                                  children: [
+                                    priorityCard,
+                                    const SizedBox(height: 16),
+                                    systemCard,
+                                  ],
+                                );
+                              }
+
+                              return Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(child: priorityCard),
+                                  const SizedBox(width: 16),
+                                  Expanded(child: systemCard),
+                                ],
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -177,7 +189,6 @@ class _ActionLine extends StatelessWidget {
             label: text,
             color: AppColors.textDark,
             fontWeight: FontWeight.w600,
-            maxLines: 3,
           ),
         ),
       ],
